@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Findings &amp; Future — Reading the Light</title>
+<meta name="description" content="What the thesis established, what it honestly couldn't, and the roadmap from here to Rubin-LSST.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="index.html">Reading the Light <span class="z">z→</span></a>
+    <button class="nav-toggle">menu</button>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="physics.html">The Physics</a>
+      <a href="model.html">Building the Model</a>
+      <a href="vila.html">VILA</a>
+      <a href="population.html">Population Model</a>
+      <a href="redshift.html">Redshift</a>
+      <a href="lbg.html">Lyman Break Galaxies</a>
+      <a href="findings.html" class="active">Findings</a>
+    </div>
+  </div>
+</nav>
+
+<header class="page-head">
+  <div class="wrap">
+    <span class="eyebrow">Chapter 07 — Conclusions · thesis ch. 9</span>
+    <h1>What Was Learned</h1>
+    <p class="standfirst">
+      Three contributions, honestly graded. What the framework established, where it stops short, and the
+      unusually concrete roadmap from this thesis to the next generation of sky surveys.
+    </p>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <hr class="zrule">
+    <h2>The three contributions, scored</h2>
+
+    <div class="cards">
+      <div class="card reveal">
+        <span class="eyebrow">Contribution I</span>
+        <h3>VILA — the IGM absorption, per galaxy</h3>
+        <p>
+          Replacing the one-curve-fits-all IGM correction with 1,000 Monte Carlo sightlines per galaxy,
+          fused by a Gaussian copula, cut the per-filter outlier fraction from 17.0% (mean-curve correction)
+          and 11.6% (no correction at all) to <b>2.26%</b> — reductions of 87% and 80%. The most IGM-sensitive
+          filters tell it best: HSC g fell from 14.3% to 0.19%, HSC r from 24.5% to 0.03%, HSC i from a
+          disastrous 98.7% to 0.32%. The headline insight along the way: the standard mean correction doesn't
+          just underperform — it actively <em>overcorrects</em>, because the fitted coefficients have already
+          silently absorbed part of the IGM. Averaging the fog is worse than ignoring it.
+        </p>
+      </div>
+
+      <div class="card reveal">
+        <span class="eyebrow">Contribution II</span>
+        <h3>The population model — spectrum-space, mapped</h3>
+        <p>
+          A twice-modified Extreme Deconvolution — piecewise-linear redshift-dependent mean across seven bins,
+          Student-t robustness against galaxies' heavy tails — converged stably in under 50 iterations, its
+          parameters settling by six orders of magnitude. The generative test: model and data magnitude
+          distributions agree across all 20 filters to within <b>0.3 mag in the mean and 0.2 mag in width</b>.
+          Residual widths above unity in the intermediate bands (0.92–2.26) honestly flag where the 8-component
+          basis and noise calibration run out — and on the LBG subsample the model shines, with break-filter
+          residuals narrowing to σ = 0.82 (g) and 0.70 (r).
+        </p>
+      </div>
+
+      <div class="card reveal">
+        <span class="eyebrow">Contribution III</span>
+        <h3>The redshift pipeline — diagnosed, not just scored</h3>
+        <p>
+          The χ² estimator with an empirical coefficient prior achieved σ<sub>NMAD</sub> = 0.1054 with 33.4%
+          catastrophic outliers on 20,000 held-out galaxies — behind the mature codes, and the thesis says so
+          plainly. Its scientific value is the controlled experiment wrapped around it: swapping only the
+          templates for EAZY's within the identical pipeline halved the scatter to 0.0491, isolating <b>the
+          spectral basis as the dominant bottleneck</b>. The prior's proven role: dissolving the z ≈ 8 ceiling
+          artefact where degenerate SEDs pinned galaxies to the top of the grid.
+        </p>
+      </div>
+
+      <div class="card reveal">
+        <span class="eyebrow">The application</span>
+        <h3>LBGs — the framework on home turf</h3>
+        <p>
+          24,510 g-dropout and 3,867 r-dropout candidates selected via Harikane et al. (2022) cuts, with
+          61% and 82% purity. The contaminant population wasn't just counted — it was <em>predicted</em>
+          (Balmer-break impostors at z ≈ 0.52 and 0.82, exactly where the D4000 formula places them) and
+          <em>independently convicted</em> by the blue-band test: genuine LBGs are consistent with blank sky
+          blueward of the break (median SNR ≈ 0) while contaminants glow at SNR ≈ 1. On this population,
+          a population-trained prior tripled the redshift estimator's accuracy, and EAZY hit its best numbers
+          anywhere: 0.8% outliers on r-band LBGs.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <hr class="zrule">
+    <h2>The fine print — stated, not buried</h2>
+    <div class="prose">
+      <p class="lede">
+        Five important limitations are flagged explicitly,
+        each with its cause identified and, in most cases, its cure priced.
+      </p>
+      <ul>
+        <li><strong>VILA dims at z &gt; 6.5.</strong> In the Gunn–Peterson regime, transmission collapses so
+          steeply that the interpolation grid gets left behind. The fix is stated and cheap in principle —
+          a finer redshift grid (Δz = 0.01) and 10,000 sightlines instead of 1,000, as reference works use —
+          it simply needs more compute than an MSc timeline affords.</li>
+        <li><strong>VILA's transmissions are not pure IGM curves.</strong> Because the least-squares coefficients
+          absorb part of the absorption first, VILA recovers the <em>residual</em> IGM. Disentangling the two
+          would require fitting coefficients only on bands redward of Lyman-α — and at z ~ 5 COSMOS offers
+          only ~6 such bands, too few to anchor the fit.</li>
+        <li><strong>The NMF basis runs out of vocabulary.</strong> Residual widths above unity in several
+          intermediate bands say the 8 components cannot voice every spectral feature those narrow filters
+          hear. A richer template library is the direct remedy.</li>
+        <li><strong>IRAC sits outside the population model.</strong> The infrared bands' outsized pull on the
+          fit forced their exclusion; integrating that information without letting it hijack the coefficients
+          remains an open problem.</li>
+        <li><strong>The reference redshifts are themselves photometric.</strong> Every σ<sub>NMAD</sub> in the
+          thesis measures agreement with LePhare, not with truth — a caveat that bites hardest exactly where
+          LePhare itself is least reliable (faint, high-z). Spectroscopy is the only escape.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <hr class="zrule">
+    <h2>The roadmap</h2>
+    <div class="prose">
+      <p>
+        What distinguishes this future-work section is that most items aren't wishes — they are wirings of
+        parts the thesis already built.
+      </p>
+    </div>
+
+    <div class="flow reveal">
+      <div class="flow-head">
+        <span class="fig-tag">Roadmap · from thesis to survey science</span>
+        <b>Near-term wirings, mid-term upgrades, far-term destinations</b>
+      </div>
+      <svg viewBox="0 0 980 430" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Future work roadmap">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#5A6C9C"/>
+          </marker>
+          <linearGradient id="specStroke" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#7DB4FF"/><stop offset=".4" stop-color="#8FE0C0"/>
+            <stop offset=".7" stop-color="#F3C879"/><stop offset="1" stop-color="#FF7A5C"/>
+          </linearGradient>
+        </defs>
+
+        <text x="20" y="30" class="flabel">NOW — WIRE TOGETHER WHAT EXISTS</text>
+        <rect x="16" y="44" width="300" height="96" rx="10" class="fnode fnode-hl"/>
+        <text x="166" y="72" text-anchor="middle" class="ftext">Population model → photo-z prior</text>
+        <text x="166" y="92" text-anchor="middle" class="fsub">swap the flat empirical prior for the</text>
+        <text x="166" y="108" text-anchor="middle" class="fsub">redshift-dependent μ(z), Σ from XD —</text>
+        <text x="166" y="124" text-anchor="middle" class="fsub">fixing the high-z pull-to-the-mean tax</text>
+
+        <rect x="16" y="170" width="300" height="80" rx="10" class="fnode"/>
+        <text x="166" y="196" text-anchor="middle" class="ftext">Richer spectral basis + z-prior</text>
+        <text x="166" y="214" text-anchor="middle" class="fsub">attack the EAZY-diagnosed bottleneck;</text>
+        <text x="166" y="230" text-anchor="middle" class="fsub">add an EAZY-style magnitude–z prior</text>
+
+        <rect x="16" y="280" width="300" height="80" rx="10" class="fnode"/>
+        <text x="166" y="306" text-anchor="middle" class="ftext">VILA at full resolution</text>
+        <text x="166" y="324" text-anchor="middle" class="fsub">Δz = 0.01 grid, 10,000 sightlines —</text>
+        <text x="166" y="340" text-anchor="middle" class="fsub">curing the z &gt; 6.5 dip with compute</text>
+
+        <text x="356" y="30" class="flabel">NEXT — DEEPEN THE MODEL</text>
+        <rect x="352" y="44" width="290" height="96" rx="10" class="fnode"/>
+        <text x="497" y="72" text-anchor="middle" class="ftext">Beyond one Gaussian</text>
+        <text x="497" y="92" text-anchor="middle" class="fsub">multi-Gaussian mixtures or</text>
+        <text x="497" y="108" text-anchor="middle" class="fsub">normalizing flows for XD — letting</text>
+        <text x="497" y="124" text-anchor="middle" class="fsub">the population have multiple tribes</text>
+
+        <rect x="352" y="170" width="290" height="80" rx="10" class="fnode"/>
+        <text x="497" y="196" text-anchor="middle" class="ftext">Joint dust model P(α, E(B−V) | z)</text>
+        <text x="497" y="214" text-anchor="middle" class="fsub">dust-free FSPS templates + explicit</text>
+        <text x="497" y="230" text-anchor="middle" class="fsub">attenuation → infer dust per galaxy</text>
+
+        <rect x="352" y="280" width="290" height="80" rx="10" class="fnode"/>
+        <text x="497" y="306" text-anchor="middle" class="ftext">UV β-slope audit vs pop-cosmos</text>
+        <text x="497" y="324" text-anchor="middle" class="fsub">quantify SPS-inherited biases in dust,</text>
+        <text x="497" y="340" text-anchor="middle" class="fsub">mass and SFR from the modelled SEDs</text>
+
+        <text x="682" y="30" class="flabel">THEN — LEAVE THE COSMOS FIELD</text>
+        <rect x="678" y="44" width="286" height="96" rx="10" class="fnode"/>
+        <text x="821" y="72" text-anchor="middle" class="ftext">Validate on XMM-LSS</text>
+        <text x="821" y="92" text-anchor="middle" class="fsub">generate mock LBG catalogues per depth</text>
+        <text x="821" y="108" text-anchor="middle" class="fsub">layer; compare colour–colour diagrams</text>
+        <text x="821" y="124" text-anchor="middle" class="fsub">and number counts against observation</text>
+
+        <rect x="678" y="190" width="286" height="110" rx="10" class="fnode fnode-hl"/>
+        <text x="821" y="222" text-anchor="middle" class="ftext">Rubin-LSST projections</text>
+        <text x="821" y="242" text-anchor="middle" class="fsub">extend to LSST year-1 and year-10</text>
+        <text x="821" y="258" text-anchor="middle" class="fsub">filters and depths — informing photo-z</text>
+        <text x="821" y="274" text-anchor="middle" class="fsub">strategy for billions of galaxies</text>
+        <text x="821" y="290" text-anchor="middle" class="fsub">before the survey delivers them</text>
+
+        <path d="M316,92 H344" class="farrow"/>
+        <path d="M316,210 H344" class="farrow"/>
+        <path d="M316,320 H344" class="farrow"/>
+        <path d="M642,92 H670" class="farrow"/>
+        <path d="M642,210 C660,210 664,150 672,120" class="farrow"/>
+        <path d="M642,320 C662,320 668,270 674,248" class="farrow"/>
+        <path d="M821,140 V182" class="farrow farrow-hl"/>
+      </svg>
+      <p class="flow-note">The highlighted first step is the thesis's own thesis: the population model and the redshift pipeline were built as two halves of one machine. Chapter 7's diagnosis (the prior pulls high-z galaxies toward a low-z mean) is precisely the disease Chapter 6's μ(z) was designed to cure. The wiring diagram already exists — it just wasn't switched on within the MSc timeline.</p>
+    </div>
+
+    <div class="keyidea">
+      <span class="mono">The thesis in one line</span>
+      Using a flexible SED framework to model the population of galaxies upto a redshift of 8, while considering effects of the Intergalactic medium to vary with line of sight, informed by data. Simultaneously, predicting the redshifts of galaxies.    </div>
+
+    <div class="prose">
+      <p>
+        Thank you for reading this far. Please email me for my full thesis
+      </p>
+    </div>
+    <div class="btn-row">
+      <a class="btn btn-ghost" href="index.html">Back to the beginning</a>
+    </div>
+
+    <div class="pager">
+      <a href="lbg.html">← Previous<b>Lyman Break Galaxies</b></a>
+      <a class="next" href="index.html">Home →<b>Reading the Light</b></a>
+    </div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <div>
+      <b>Probabilistic Photometric Modelling of Galaxies</b><br>
+      Pranav R Iyengar · Imperial College London · 2026
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Physics of Seeing Far — Reading the Light</title>
+<meta name="description" content="Photometric surveys, redshift, the intergalactic medium, dust, and Lyman Break Galaxies — the physics behind the thesis, explained.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="index.html">Reading the Light <span class="z">z→</span></a>
+    <button class="nav-toggle">menu</button>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="physics.html" class="active">The Physics</a>
+      <a href="model.html">Building the Model</a>
+      <a href="vila.html">VILA</a>
+      <a href="population.html">Population Model</a>
+      <a href="redshift.html">Redshift</a>
+      <a href="lbg.html">Lyman Break Galaxies</a>
+      <a href="findings.html">Findings</a>
+    </div>
+  </div>
+</nav>
+
+<header class="page-head">
+  <div class="wrap">
+    <span class="eyebrow">Chapter 01 — Background · thesis ch. 2</span>
+    <h1>The Physics of Seeing Far</h1>
+    <p class="standfirst">
+      Observational cosmology is an inference problem: we never see galaxies, only light that has been stretched by
+      cosmic expansion and chewed on by everything in between. Five things — filters, redshift, the intergalactic
+      medium, dust, and the Lyman break — determine what actually lands on the detector. This thesis considers everything except dust, which is already built in to the SED templates used.    </p>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <hr class="zrule">
+    <h2>Photometry: reading a book through frosted glass</h2>
+    <div class="prose">
+      <p class="lede">
+        The dataset behind everything here is <strong>COSMOS</strong> — a patch of equatorial sky about sixteen times
+        the area of the full Moon, deliberately chosen because it has few foreground stars and very little Milky Way
+        dust in the way. Telescopes from Hawai'i to space have stared at it for two decades, producing the
+        COSMOS2020 catalogue: 1.7&nbsp;million objects, each measured in up to 44 colour filters.
+      </p>
+      <p>
+        A photometric filter is a piece of glass that only passes light within a fixed wavelength window. The
+        detector then integrates everything that gets through into a single number (flux density). Compare that to a spectrograph, which
+        splits light into thousands of wavelength channels: a spectrum is the full text of a galaxy's story, while
+        photometry is the same text read through frosted glass — you can make out the shape of the paragraphs but not
+        the individual words. The trade is brutal but worth it: <strong>a spectrograph does one object at a time;
+        a camera does everything in the field at once.</strong> With billions of galaxies coming from Rubin-LSST and
+        Euclid, photometry is the main method.
+      </p>
+      <p>
+        <strong>Colour</strong>: the difference in brightness between two filters. A sharp
+        feature in the spectrum — a cliff-edge "break" — produces a huge colour between the filter just blueward and
+        the filter just redward of it. Colours are one of the ways how photometry recovers the plot of the story it can't quite read.
+      </p>
+    </section>
+
+<section>
+  <div class="wrap">
+    <hr class="zrule">
+    <h2>Redshift: distance encoded in colour</h2>
+    <div class="prose">
+      <p>
+        As light crosses an expanding universe, its wavelength is stretched by the same factor space itself has
+        stretched, the factor is (1 + <em>z</em>): a galaxy at redshift <em>z</em> = 4 emitted its light when
+        the universe was one-fifth its current size — roughly 1.5 billion years after the Big Bang. Redshift is
+        simultaneously a distance, a clock, and the fundamental coordinate of cosmology. Measure <em>z</em> for
+        enough galaxies and you can watch the universe grow up.
+      </p>
+      <p>
+        Two ways to measure it. <strong>Spectroscopic redshifts</strong> read the exact observed wavelength of a known
+        spectral line — precise but painfully slow. COSMOS2020 has spec-z for only a few thousand of its
+        1.7&nbsp;million objects. <strong>Photometric redshifts (photo-z)</strong> instead watch spectral features
+        move through the filter set as z increases and fit template spectra to the resulting colour pattern —
+        typically via χ² minimisation over a redshift grid. Precision drops to σ<sub>z</sub> ∼ 0.01–0.05·(1+z), but
+        you get <em>every galaxy in the survey</em>. COSMOS ships photo-z from two industry-standard codes,
+        <strong>EAZY</strong> and <strong>LePhare</strong>. This thesis both leans on (as reference redshifts)
+        and competes against (as baselines) the LePhare redshift estimates.
+      </p>
+    </div>
+    <div class="keyidea">
+      <span class="mono">The core bargain</span>
+      Spectroscopy: the truth, one galaxy at a time. Photometry: a good guess, a million galaxies at a time.
+      This thesis is about making the guess as principled as possible.
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <hr class="zrule">
+    <h2>The intergalactic medium</h2>
+    <div class="prose">
+      <p>
+        Between a distant galaxy and our telescope lies gigaparsecs of not-quite-empty space, strewn with clouds
+        of neutral hydrogen — the <strong>intergalactic medium (IGM)</strong>. Any photon blueward of the Lyman-α
+        line (rest wavelength 1216&nbsp;Å) that meets one of these clouds at just the right redshift gets absorbed.
+        A photon travelling billions of years passes clouds at every intermediate redshift,        each cloud takes a bite (absorbs) at its own redshifted Lyman wavelengths, and the bites pile up into the
+        <strong>Lyman-α forest</strong> — hundreds of absorption lines shredding the blue side of the spectrum.
+        Below the Lyman limit (912&nbsp;Å), photons are energetic enough to ionise hydrogen outright, and dense
+        clouds erase the spectrum almost completely.
+      </p>
+    </div>
+
+    <!-- custom illustration: sightline through IGM -->
+    <div class="flow reveal">
+      <div class="flow-head">
+        <span class="fig-tag">Illustration</span>
+        <b>One photon's obstacle course</b>
+      </div>
+      <svg viewBox="0 0 960 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of light travelling from a galaxy through hydrogen clouds to a telescope">
+        <defs>
+          <linearGradient id="ray" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#7DB4FF"/><stop offset=".45" stop-color="#8FE0C0"/>
+            <stop offset=".75" stop-color="#F3C879"/><stop offset="1" stop-color="#FF7A5C"/>
+          </linearGradient>
+        </defs>
+        <!-- galaxy -->
+        <circle cx="70" cy="110" r="26" fill="#7DB4FF22" stroke="#7DB4FF" stroke-width="1.4"/>
+        <circle cx="70" cy="110" r="12" fill="#7DB4FF66"/>
+        <circle cx="70" cy="110" r="4" fill="#EAEEFB"/>
+        <text x="70" y="165" text-anchor="middle" class="fsub">galaxy at z = 5</text>
+        <text x="70" y="181" text-anchor="middle" class="fsub">emits blue UV light</text>
+        <!-- light ray -->
+        <path d="M100,110 C300,96 620,124 850,110" stroke="url(#ray)" stroke-width="3" fill="none" opacity=".9"/>
+        <!-- clouds -->
+        <g opacity=".9">
+          <ellipse cx="250" cy="100" rx="34" ry="18" fill="#9AA6C81f" stroke="#9AA6C866"/>
+          <text x="250" y="66" text-anchor="middle" class="fsub">LAF cloud · thin</text>
+          <ellipse cx="430" cy="118" rx="44" ry="24" fill="#9AA6C82e" stroke="#9AA6C888"/>
+          <text x="430" y="168" text-anchor="middle" class="fsub">Lyman-limit system · opaque below 912 Å</text>
+          <ellipse cx="620" cy="104" rx="30" ry="16" fill="#9AA6C81f" stroke="#9AA6C866"/>
+          <text x="620" y="66" text-anchor="middle" class="fsub">LAF cloud</text>
+        </g>
+        <!-- bites -->
+        <text x="250" y="130" text-anchor="middle" class="flabel">−Lyα @ z=3.1</text>
+        <text x="430" y="94" text-anchor="middle" class="flabel">−continuum</text>
+        <text x="620" y="134" text-anchor="middle" class="flabel">−Lyα @ z=1.4</text>
+        <!-- telescope -->
+        <rect x="852" y="86" width="14" height="48" rx="3" fill="#131C3A" stroke="#2B3A63" transform="rotate(24 859 110)"/>
+        <rect x="846" y="130" width="40" height="10" rx="3" fill="#131C3A" stroke="#2B3A63"/>
+        <text x="872" y="165" text-anchor="middle" class="fsub">telescope</text>
+        <text x="872" y="181" text-anchor="middle" class="fsub">receives reddened, bitten light</text>
+      </svg>
+      <p class="flow-note">Each cloud absorbs at <em>its own</em> redshifted Lyman wavelengths, so the bites land at different observed wavelengths and pile up into a "forest" of absorption lines. Because the clouds are placed randomly, every galaxy's line of sight is a different draw — the fact that powers Chapter 03 (VILA).</p>
+    </div>
+
+    <figure class="fig reveal">
+      <div class="fig-img"><img src="img/fig2_1_lyman_forest.png" alt="Spectra of two quasars showing the growth of the Lyman-alpha forest with redshift" loading="lazy"></div>
+      <figcaption>
+        <span class="fig-tag">Figure 2.1 · adapted from W. Keel</span>
+        <span class="fig-title">The Lyman-α forest: same kind of object, wildly different spectra</span>
+        <p>Two quasar spectra plotted in their rest frames, one at redshift z = 0.158 (nearby) and one at z = 3.62 (distant). The tall peak in each is the Lyman-α emission line at 1216&nbsp;Å. Look blueward (left) of that peak: the nearby quasar's continuum is smooth and clean, while the distant quasar's continuum is shredded into a dense thicket of narrow absorption lines — the Lyman-α forest.</p>
+        <p><b>Why the difference?</b> Every line in the forest is a separate hydrogen cloud sitting somewhere along the line of sight, absorbing at the Lyman-α wavelength as seen in <em>that cloud's</em> rest frame. Light from a more distant source crosses more clouds, and the cloud population itself was denser in the younger universe — so the forest thickens dramatically with redshift. <b>The implication for this thesis:</b> the blue side of every high-redshift galaxy's photometry is systematically suppressed, by an amount that varies from sightline to sightline. Ignore it and your fluxes are wrong. One can average it but it introduces errors while dealing at the individual galaxy level.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="fig reveal">
+      <div class="fig-img"><img src="img/fig2_2_gunn_peterson.png" alt="Spectrum of a z=6.28 quasar showing the Gunn-Peterson trough" loading="lazy"></div>
+      <figcaption>
+        <span class="fig-tag">Figure 2.2 · from Becker et al. (2015)</span>
+        <span class="fig-title">The Gunn–Peterson trough: when the forest becomes a wall</span>
+        <p>The spectrum of quasar J103027.10+052455.0 at redshift z = 6.28. Redward of the (redshifted) Lyman-α line near 8700&nbsp;Å, the spectrum looks normal. Blueward of it, the flux doesn't just get nibbled — it goes to <em>zero</em>, over a huge stretch of wavelength. This is the Gunn–Peterson trough.</p>
+        <p><b>What it means:</b> Gunn &amp; Peterson showed in 1965 that even a tiny fraction of neutral hydrogen produces an enormous Lyman-α optical depth — τ ∼ 10⁵ × the neutral fraction. At z &gt; 6 we are looking back into the tail end of the "epoch of reionisation," when enough neutral hydrogen remained to absorb essentially every blueward photon. <b>The implication:</b> beyond z ≈ 6, the blue filters carry almost no information at all.</p>
+      </figcaption>
+    </figure>
+
+    <div class="prose">
+      <h3>Three species of cloud</h3>
+      <p>
+        Astronomers sort the absorbers by their hydrogen column density N<sub>HI</sub> (how much gas a photon moves
+        through). <strong>Lyman-α forest (LAF) clouds</strong> are thin wisps tracing the cosmic web — individually
+        harmless, collectively a blanket. <strong>Lyman-limit systems (LLS)</strong> are thick enough to block all
+        ionising photons, stamping a hard edge at the redshifted 912&nbsp;Å. <strong>Damped Lyman-α systems (DLA)</strong>
+        are near-galactic slabs of neutral gas: total blackout below the limit. LAF clouds are ~500× more common
+        than DLA — but a single DLA can zero out a sightline that would otherwise be clear. That
+        asymmetry is why the <em>average</em> absorption is a poor description of any individual galaxy.
+      </p>
+    </div>
+  </div>
+</section>
+
+
+<section>
+  <div class="wrap">
+    <hr class="zrule">
+    <h2>Lyman Break Galaxies: found by their disappearance</h2>
+    <div class="prose">
+      <p>
+        The effect of this absorption can be seen in Lyman break galaxies. A young star-forming galaxy at high
+        redshift has a bright blue continuum — but the IGM plus the galaxy's own gas erase everything blueward of the
+        Lyman features, carving a cliff into the spectrum. Redshift slides that cliff through the filter set. Find
+        the filter where a galaxy abruptly <em>vanishes</em> while staying bright in redder bands, and you've read
+        its approximate redshift straight off the filter wheel: g-band dropouts sit at z ≈ 4, r-band dropouts at
+        z ≈ 5. These are <strong>Lyman Break Galaxies (LBGs)</strong>.
+      </p>
+    </div>
+
+    <figure class="fig reveal">
+      <div class="fig-img"><img src="img/fig2_4_lbg_spectra.png" alt="Composite spectrum of Lyman break galaxies from Shapley et al. 2003" loading="lazy"></div>
+      <figcaption>
+        <span class="fig-tag">Figure 2.4 · adapted from Shapley et al. (2003)</span>
+        <span class="fig-title">The anatomy of a Lyman Break Galaxy spectrum</span>
+        <p>A composite (stacked) rest-frame UV spectrum built from hundreds of LBGs. The dominant feature is the towering Lyman-α emission line at 1216&nbsp;Å — hydrogen atoms in the galaxy cascading back to their ground state after being excited by hot young stars. Immediately blueward of the peak, the continuum visibly steps <em>down</em>: that is the Lyman-α forest blanketing at work, the statistical average of thousands of intervening clouds. Various interstellar absorption lines from the galaxy's own gas punctuate the continuum redward of the line.</p>
+        <p><b>What it implies:</b> LBGs are luminous, blue, actively star-forming systems whose spectra look remarkably like local starburst galaxies scaled up. The combination of a strong emission line, a blanketed blue side, and a hard break makes them simultaneously easy to <em>find</em> photometrically and valuable to <em>study</em> — their numbers and clustering constrain how structure assembled in the early universe.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="fig reveal">
+      <div class="fig-img"><img src="img/fig2_5_lbg_dropout.png" alt="JWST images and spectrum of a z~14 galaxy demonstrating the dropout technique" loading="lazy"></div>
+      <figcaption>
+        <span class="fig-tag">Figure 2.5 · adapted from Carniani et al. (2024)</span>
+        <span class="fig-title">The dropout technique, caught in the act at z ≈ 14</span>
+        <p>JWST observations of one of the most distant galaxies ever confirmed. The image cutouts along the top show the same patch of sky through progressively bluer filters (right to left): the galaxy is clearly detected in the red bands, then abruptly <em>disappears</em> in F150W and F090W — it has "dropped out." The panel below shows the measured spectrum, with the sharp break confirming spectroscopically exactly what the vanishing act implied photometrically.</p>
+        <p><b>How to use it:</b> the observed wavelength of the break is 1216 Å × (1 + z), so the identity of the dropout band immediately brackets the redshift — no spectrum required. <b>The catch:</b> other spectral cliffs exist. The Balmer/4000 Å break in old, low-redshift galaxies can impersonate a Lyman break in coarse broadband colours, letting z ≈ 0.5 impostors into a z ≈ 4 sample. In practice, selection uses cuts in a colour–colour plane (this thesis adopts the Harikane et al. 2022 criteria) designed to fence the impostors out — with imperfect success, as Chapter 06 quantifies.</p>
+      </figcaption>
+    </figure>
+
+    <div class="keyidea">
+      <span class="mono">Where this leaves us</span>
+      The light we receive = (intrinsic galaxy spectrum) × (dust) × (IGM lottery) × (redshift stretch), summed
+      through 26 filter windows, plus noise. The rest of the thesis is the art of running that equation backwards.
+    </div>
+
+    <div class="pager">
+      <a href="index.html">← Back<b>Home</b></a>
+      <a class="next" href="model.html">Next →<b>Building the Model</b></a>
+    </div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <div>
+      <b>Probabilistic Photometric Modelling of Galaxies</b><br>
+      Pranav R Iyengar · Imperial College London · 2026
+    </div>
+    
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Redshift Inference — Reading the Light</title>
+<meta name="description" content="Running the forward model in reverse: a χ²-based photometric redshift pipeline with an empirical population prior, benchmarked honestly against EAZY.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="index.html">Reading the Light <span class="z">z→</span></a>
+    <button class="nav-toggle">menu</button>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="physics.html">The Physics</a>
+      <a href="model.html">Building the Model</a>
+      <a href="vila.html">VILA</a>
+      <a href="population.html">Population Model</a>
+      <a href="redshift.html" class="active">Redshift</a>
+      <a href="lbg.html">Lyman Break Galaxies</a>
+      <a href="findings.html">Findings</a>
+    </div>
+  </div>
+</nav>
+
+<header class="page-head">
+  <div class="wrap">
+    <span class="eyebrow">Chapter 05 — Contribution III · thesis ch. 7</span>
+    <h1>Running the Model in Reverse</h1>
+    <p class="standfirst">
+      Everything so far has been a forward model: pick a galaxy, predict its fluxes. Now the arrow flips.
+      Given 26 fluxes and nothing else — what is the galaxy's redshift? This chapter builds a χ²
+      estimator with a population prior, tests it on 20,000 galaxies.
+    </p>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <hr class="zrule">
+    <h2>The machinery: a precomputed universe</h2>
+    <div class="prose">
+      <p class="lede">
+        The idea is old and good: slide the model spectrum through every possible redshift and see where it
+        matches the photometry best. What makes it fast here is that nothing expensive happens at fit time.
+        The 8 PCA basis spectra plus the mean SED are redshifted, IGM-attenuated, and filter-projected in
+        advance across a grid of trial redshifts (Δz = 0.05, z ∈ [0, 8]), producing a <strong>projection
+        tensor</strong>: a lookup table of "what would basis component k contribute to filter b if the galaxy
+        were at redshift z". Fitting a galaxy then reduces to sweeping a 1D grid of matrix operations.
+      </p>
+      <p>Three deliberate design choices distinguish this pipeline from the population model of the previous chapter:</p>
+      <ul>
+        <li><strong>PCA basis, not NMF.</strong> The redshift fit exploits closed-form least squares at each
+          trial redshift, and PCA's unconstrained coefficients keep that solution exact and instantaneous.</li>
+        <li><strong>All 26 bands.</strong> The infrared bands excluded from population training rejoin here —
+          for redshift hunting, more wavelength baseline is more leverage. the IRAC bands are shown (Illbert et al (2008)) to be extremely important for redshift estimation.</li>
+        <li><strong>Madau (1995) mean IGM, not VILA.</strong> A pragmatic compromise: VILA fits sightlines
+          per galaxy at a <em>known</em> redshift, but here the redshift is the unknown — running VILA at
+          all 161 trial redshifts for every galaxy would multiply the compute unaffordably.</li>
+      </ul>
+    </div>
+
+    <div class="flow reveal">
+      <div class="flow-head">
+        <span class="fig-tag">Workflow · photo-z pipeline</span>
+        <b>From 26 fluxes to one redshift</b>
+      </div>
+      <svg viewBox="0 0 980 440" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Photometric redshift pipeline flowchart">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#5A6C9C"/>
+          </marker>
+          <linearGradient id="specStroke" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#7DB4FF"/><stop offset=".4" stop-color="#8FE0C0"/>
+            <stop offset=".7" stop-color="#F3C879"/><stop offset="1" stop-color="#FF7A5C"/>
+          </linearGradient>
+        </defs>
+
+        <text x="20" y="30" class="flabel">OFFLINE — ONCE</text>
+        <rect x="16" y="44" width="286" height="86" rx="10" class="fnode"/>
+        <text x="159" y="72" text-anchor="middle" class="ftext">Build projection tensor P(z)</text>
+        <text x="159" y="90" text-anchor="middle" class="fsub">8 PCA components + mean SED →</text>
+        <text x="159" y="106" text-anchor="middle" class="fsub">redshift · IGM (Madau 95) · 26 filters</text>
+        <text x="159" y="122" text-anchor="middle" class="fsub">161 grid points, Δz = 0.05</text>
+
+        <rect x="16" y="170" width="286" height="86" rx="10" class="fnode"/>
+        <text x="159" y="198" text-anchor="middle" class="ftext">Train population prior</text>
+        <text x="159" y="216" text-anchor="middle" class="fsub">fit 20,000 training galaxies at their</text>
+        <text x="159" y="232" text-anchor="middle" class="fsub">reference z → Gaussian over</text>
+        <text x="159" y="248" text-anchor="middle" class="fsub">coefficients: mean μₐ, precision Λₐ</text>
+
+        <text x="366" y="30" class="flabel">PER GALAXY — THE GRID SWEEP</text>
+        <rect x="362" y="44" width="280" height="76" rx="10" class="fnode"/>
+        <text x="502" y="70" text-anchor="middle" class="ftext">Whiten the data</text>
+        <text x="502" y="88" text-anchor="middle" class="fsub">divide fluxes and tensor by σ;</text>
+        <text x="502" y="104" text-anchor="middle" class="fsub">drop invalid bands</text>
+
+        <rect x="362" y="156" width="280" height="96" rx="10" class="fnode"/>
+        <text x="502" y="182" text-anchor="middle" class="ftext">At each trial z:</text>
+        <text x="502" y="200" text-anchor="middle" class="fsub">solve best-fit coefficients in closed form</text>
+        <text x="502" y="216" text-anchor="middle" class="fsub">χ²(z) without prior — or with penalty (prior)</text>
+        <text x="502" y="232" text-anchor="middle" class="fsub">(a−μₐ)ᵀΛₐ(a−μₐ) pulling toward real SEDs</text>
+
+        <rect x="702" y="44" width="262" height="76" rx="10" class="fnode"/>
+        <text x="833" y="70" text-anchor="middle" class="ftext">Find the minimum</text>
+        <text x="833" y="88" text-anchor="middle" class="fsub">ẑ = argmin χ²(z)</text>
+        <text x="833" y="104" text-anchor="middle" class="fsub">across all 161 grid points</text>
+
+        <rect x="702" y="156" width="262" height="96" rx="10" class="fnode fnode-hl"/>
+        <text x="833" y="184" text-anchor="middle" class="ftext">Parabolic refinement</text>
+        <text x="833" y="202" text-anchor="middle" class="fsub">fit a parabola through the minimum</text>
+        <text x="833" y="218" text-anchor="middle" class="fsub">and its two neighbours → sub-grid ẑ</text>
+        <text x="833" y="234" text-anchor="middle" class="fsub">(recovers ~0.003 in σ_NMAD)</text>
+
+        <rect x="362" y="316" width="602" height="86" rx="10" class="fnode fnode-hl"/>
+        <text x="663" y="344" text-anchor="middle" class="ftext">Validation on 20,000 held-out galaxies</text>
+        <text x="663" y="362" text-anchor="middle" class="fsub">scored on σ_NMAD, catastrophic outlier % (|Δz|/(1+z) &gt; 0.15), median bias —</text>
+        <text x="663" y="378" text-anchor="middle" class="fsub">against LePhare reference redshifts + EAZY run through the identical pipeline</text>
+
+        <path d="M302,87 H354" class="farrow"/>
+        <path d="M302,213 C330,213 340,213 362,208" class="farrow"/>
+        <path d="M502,120 V148" class="farrow"/>
+        <path d="M642,196 C670,196 676,110 694,92" class="farrow"/>
+        <path d="M833,120 V148" class="farrow"/>
+        <path d="M833,252 V308" class="farrow farrow-hl"/>
+        <text x="30" y="330" class="flabel">A 70/30 TRAIN/EVAL SPLIT KEEPS</text>
+        <text x="30" y="348" class="flabel">THE PRIOR AND THE TEST HONEST —</text>
+        <text x="30" y="366" class="flabel">NO GALAXY GRADES ITS OWN EXAM</text>
+      </svg>
+      <p class="flow-note">The prior deserves a careful reading: it is a prior on <em>spectral shape</em>, not on redshift. Every trial redshift is still evaluated on equal footing — what gets penalised are coefficient combinations that no real galaxy in the training set resembles. That distinction explains almost everything about the results below.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <hr class="zrule">
+    <h2>What the prior actually does</h2>
+
+    <figure class="fig reveal">
+      <div class="fig-img"><img src="img/fig7_1_chi2_curves.png" alt="Chi-square curves versus redshift for four representative galaxies, with and without prior" loading="lazy"></div>
+      <figcaption>
+        <span class="fig-tag">Figure 7.1 · four galaxies under the microscope</span>
+        <span class="fig-title">The χ² landscape — and the prior as a rescue mechanism</span>
+        <p>Each panel plots χ² against trial redshift for one real galaxy: blue without the prior, red with it. The dashed vertical line marks the LePhare reference redshift; dotted and dash-dot lines mark this pipeline's no-prior and with-prior estimates. In the first three galaxies, both curves carve a single decisive valley at the right redshift and agree almost perfectly — when the photometry is constraining, the prior simply stays out of the way.</p>
+        <p><b>Two crucial behaviours appear beyond that:</b> (1) past z ≈ 6.5 the blue and red curves systematically diverge. There, the Gunn–Peterson trough blacks out so many blue bands that near-zero fluxes become trivially consistent with almost any SED — the no-prior χ² finds spurious low valleys at extreme redshift. The prior recognises the coefficient contortions required and prices them out. (2) The fourth galaxy (true z ≈ 3.24) is the failure mode made visible: without the prior, the fit invents an unphysical SED and confidently declares z ≈ 8; with the prior, that solution is suppressed entirely. <b>The takeaway:</b> the prior doesn't guarantee correctness — the rescued estimate lands near z ≈ 1.8, not 3.24 — but it removes the freedom to fail catastrophically via impossible spectra.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="fig reveal">
+      <div class="fig-img"><img src="img/fig7_2_zscatter.png" alt="Predicted redshift versus LePhare redshift scatter plots" loading="lazy"></div>
+      <figcaption>
+        <span class="fig-tag">Figure 7.2 · 20,000 verdicts at once</span>
+        <span class="fig-title">Predicted vs. reference redshift — and the vanishing ceiling</span>
+        <p>Each point is one evaluation galaxy: this pipeline's redshift on the vertical axis, LePhare's on the horizontal. Green points agree within the catastrophic-outlier threshold (|Δz|/(1+z) &lt; 0.15); red points fail it. A perfect estimator would put everything on the diagonal.</p>
+        <p><b>What to look for:</b> in the no-prior panel, a dense horizontal stripe of red hugs z ≈ 8 — the <em>redshift ceiling artefact</em>. These are galaxies for which the fit found the degenerate everything-is-dark solution from Figure 7.1 and pinned them to the top of the grid. With the prior, the stripe dissolves: the same galaxies scatter back toward the 1:1 line. The exact same pipeline is run with EAZY templates (rightmost panel). This achieves the best results, most points are around the 1:1 line, in the green zone, indiciating that the basis choice is extermely important.</p>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <hr class="zrule">
+    <h2>The scoreboard — and the honest read of it</h2>
+    <div class="prose">
+      <p>
+        The evaluation metric is σ<sub>NMAD</sub>, a robust scatter measure, alongside the fraction of
+        catastrophic outliers. One caveat frames everything: the reference redshifts are <strong>LePhare's
+        photometric estimates, not spectroscopy</strong>. A perfect score here would mean perfect agreement
+        with LePhare — not perfect truth. The thesis states this limitation up front and repeatedly.
+      </p>
+    </div>
+
+    <div class="tbl-wrap reveal">
+      <table class="tbl">
+        <thead><tr><th>Method (identical pipeline, only templates differ)</th><th>σ<sub>NMAD</sub></th><th>Outliers</th><th>Bias</th></tr></thead>
+        <tbody>
+          <tr><td>PCA K = 8, no prior</td><td class="num">0.1072</td><td class="num bad">34.0%</td><td class="num">+0.0005</td></tr>
+          <tr><td>PCA K = 8, with population prior</td><td class="num">0.1054</td><td class="num">33.4%</td><td class="num">−0.0006</td></tr>
+          <tr><td>EAZY 12 templates, same pipeline</td><td class="num good">0.0491</td><td class="num good">17.5%</td><td class="num">+0.0206</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="prose">
+      <p>
+        The EAZY row is the most scientifically valuable number in the chapter, precisely <em>because</em> it wins.
+        By swapping only the templates — same grid, same χ², same everything — the twofold performance gap is
+        isolated to a single cause: <strong>the spectral basis</strong>. The PCA components, trained on a simulated
+        population, don't span the full colour diversity of real galaxies, especially where a Lyman break and a
+        Balmer break masquerade as one another. That's a diagnosis with a prescription attached, not just a defeat.
+        For context, the field's mature codes on COSMOS-like data: pop-cosmos 0.019 / 6.2% outliers, Prospector
+        0.021 / 6.6%, EAZY 0.019 / 6.8%, LePhare 0.024 / 8.4%.
+      </p>
+    </div>
+
+    <figure class="fig reveal">
+      <div class="fig-img"><img src="img/fig7_3_stratified.png" alt="Stratified diagnostics across redshift, magnitude, SNR, and valid band count" loading="lazy"></div>
+      <figcaption>
+        <span class="fig-tag">Figure 7.3 · slicing the performance four ways</span>
+        <span class="fig-title">Where the estimator succeeds, struggles, and — once — beats EAZY</span>
+        <p>Sixteen bar groups: σ<sub>NMAD</sub> (bar height) and outlier percentage (printed above each bar) for the three methods — PCA no-prior (blue), PCA with prior (orange), EAZY (green) — stratified by redshift bin, IRAC ch1 magnitude, mean signal-to-noise, and number of valid bands.</p>
+        <p><b>The four stories:</b> (1) <em>Redshift:</em> at z &lt; 1 all three methods converge near σ ≈ 0.05 — with dense filter coverage the basis barely matters; degradation with z is universal but steepest for PCA. (2) <em>Brightness:</em> performance decays monotonically for fainter galaxies — and here the reference itself decays too, since LePhare is least reliable exactly where disagreement is scored highest. (3) <em>SNR:</em> the expected monotonic improvement — with one delightful anomaly: in the very highest-SNR bin, PCA edges out EAZY, plausibly because the training set is dominated by exactly these bright, low-z galaxies. (4) <em>Valid bands:</em> every extra filter is another constraint; performance climbs steadily with band count. Together the panels show a correctly-behaving estimator whose weakness is concentrated, not diffuse.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="fig reveal">
+      <div class="fig-img"><img src="img/fig7_4_mae_vs_z.png" alt="Median absolute error versus redshift for the three methods" loading="lazy"></div>
+      <figcaption>
+        <span class="fig-tag">Figure 7.4 · the prior's hidden tax</span>
+        <span class="fig-title">Regularisation is not free: the pull toward the mean</span>
+        <p>Median absolute error |Δz|/(1+z) against redshift for the three estimators. At low redshift all three track each other closely. Beyond z ≈ 5, the with-prior curve climbs <em>above</em> the no-prior one — the prior is now doing damage.</p>
+        <p><b>Why this matters and why it's subtle:</b> Table 7.3 shows the prior slashing σ<sub>NMAD</sub> at z &gt; 5 (from 0.46 to 0.27 in the [5,6) bin), which looks like a triumph. This figure exposes what actually happened: because COSMOS is overwhelmingly a low-redshift sample, the training-set mean SED is a low-redshift SED — so at high z, where the IGM leaves few constraining bands, the prior herds all estimates into a tight cluster <em>at the wrong redshift</em>. Low scatter, high bias: σ<sub>NMAD</sub> improves while outliers stay above 70%. It is a textbook illustration of why a single scatter statistic can flatter a broken regime — and it points directly at the fix: a redshift-<em>dependent</em> prior, which is exactly what the population model of the previous chapter provides. Wiring the two together is the thesis's flagged next step.</p>
+      </figcaption>
+    </figure>
+
+    <div class="keyidea">
+      <span class="mono">Chapter in one line</span>
+      A correctly-implemented, internally-consistent photo-z pipeline whose controlled EAZY comparison converts
+      a performance gap into a precise diagnosis: the basis is the bottleneck, and the population model is the cure.
+    </div>
+
+    <div class="pager">
+      <a href="population.html">← Previous<b>Population Model</b></a>
+      <a class="next" href="lbg.html">Next →<b>Lyman Break Galaxies</b></a>
+    </div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <div>
+      <b>Probabilistic Photometric Modelling of Galaxies</b><br>
+      Pranav R Iyengar · Imperial College London · 2026
+    </div>
+    </footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>

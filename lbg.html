@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lyman Break Galaxies — Reading the Light</title>
+<meta name="description" content="28,377 candidate galaxies from the young universe, hunted by their missing light — and used as the ultimate stress test of the whole framework.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="index.html">Reading the Light <span class="z">z→</span></a>
+    <button class="nav-toggle">menu</button>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="physics.html">The Physics</a>
+      <a href="model.html">Building the Model</a>
+      <a href="vila.html">VILA</a>
+      <a href="population.html">Population Model</a>
+      <a href="redshift.html">Redshift</a>
+      <a href="lbg.html" class="active">Lyman Break Galaxies</a>
+      <a href="findings.html">Findings</a>
+    </div>
+  </div>
+</nav>
+
+<header class="page-head">
+  <div class="wrap">
+    <span class="eyebrow">Chapter 06 — The application · thesis ch. 8</span>
+    <h1>Hunting Galaxies by Their Missing Light</h1>
+    <p class="standfirst">
+     
+      Lyman Break Galaxies are the population <em>defined</em> by the IGM fingerprint — young, star-forming
+      galaxies from the universe's first two billion years, identified by the band in which they vanish.
+      This chapter selects 28,377 of them from COSMOS2020 and asks whether the model earns its keep on
+      the galaxies it was built for.
+    </p>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <hr class="zrule">
+    <h2>The selection: two colours and a diagonal line</h2>
+    <div class="prose">
+      <p class="lede">
+        Finding a z ~ 4 galaxy among 400,000 objects sounds hopeless until you remember what the IGM does:
+        it erases everything blueward of the redshifted Lyman break. At z ~ 4 that erasure lands squarely in
+        the g filter — the galaxy "drops out" of g while shining normally in r and i. At z ~ 5 the same fate
+        befalls r. So the hunt reduces to arithmetic on magnitudes, following the battle-tested colour cuts
+        of Harikane et al. (2022).
+      </p>
+    </div>
+
+    <div class="flow reveal">
+      <div class="flow-head">
+        <span class="fig-tag">Workflow · dropout selection</span>
+        <b>From 419,654 galaxies to 28,377 candidates</b>
+      </div>
+      <svg viewBox="0 0 980 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LBG dropout selection flowchart">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#5A6C9C"/>
+          </marker>
+          <linearGradient id="specStroke" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#7DB4FF"/><stop offset=".4" stop-color="#8FE0C0"/>
+            <stop offset=".7" stop-color="#F3C879"/><stop offset="1" stop-color="#FF7A5C"/>
+          </linearGradient>
+        </defs>
+
+        <rect x="330" y="20" width="320" height="66" rx="10" class="fnode"/>
+        <text x="490" y="48" text-anchor="middle" class="ftext">COSMOS2020 sample</text>
+        <text x="490" y="66" text-anchor="middle" class="fsub">419,654 galaxies · HSC g, r, i, z magnitudes</text>
+
+        <path d="M420,86 C370,110 300,120 268,138" class="farrow"/>
+        <path d="M560,86 C610,110 680,120 712,138" class="farrow"/>
+
+        <!-- g-dropout lane -->
+        <text x="60" y="130" class="flabel">G-DROPOUT LANE → TARGET z ≈ 3.5–4.5</text>
+        <rect x="56" y="144" width="380" height="88" rx="10" class="fnode"/>
+        <text x="246" y="170" text-anchor="middle" class="ftext">Detection gate</text>
+        <text x="246" y="188" text-anchor="middle" class="fsub">solidly detected in i (SNR &gt; 5);</text>
+        <text x="246" y="204" text-anchor="middle" class="fsub">if undetected in g (SNR &lt; 2), replace g with</text>
+        <text x="246" y="220" text-anchor="middle" class="fsub">the 2σ limit — a colour lower bound, not a loss</text>
+
+        <rect x="56" y="262" width="380" height="88" rx="10" class="fnode"/>
+        <text x="246" y="288" text-anchor="middle" class="ftext">Colour cuts (Harikane+22)</text>
+        <text x="246" y="308" text-anchor="middle" class="fsub">g − r &gt; 1.0  ·  r − i &lt; 1.0</text>
+        <text x="246" y="326" text-anchor="middle" class="fsub">g − r &gt; 1.5 (r − i) + 0.8</text>
+        <text x="246" y="342" text-anchor="middle" class="fsub">big break · flat continuum · diagonal purity cut</text>
+
+        <rect x="56" y="380" width="380" height="66" rx="10" class="fnode fnode-hl"/>
+        <text x="246" y="408" text-anchor="middle" class="ftext">24,510 g-dropout candidates</text>
+        <text x="246" y="426" text-anchor="middle" class="fsub">61.4% land in the target window</text>
+
+        <!-- r-dropout lane -->
+        <text x="556" y="130" class="flabel">R-DROPOUT LANE → TARGET z ≈ 4.5–5.5</text>
+        <rect x="548" y="144" width="380" height="88" rx="10" class="fnode"/>
+        <text x="738" y="170" text-anchor="middle" class="ftext">Detection gate — one rule stricter</text>
+        <text x="738" y="188" text-anchor="middle" class="fsub">detected in i (SNR &gt; 5)</text>
+        <text x="738" y="204" text-anchor="middle" class="fsub">AND fully invisible in g (SNR &lt; 2) —</text>
+        <text x="738" y="220" text-anchor="middle" class="fsub">the break has already devoured that band</text>
+
+        <rect x="548" y="262" width="380" height="88" rx="10" class="fnode"/>
+        <text x="738" y="288" text-anchor="middle" class="ftext">Colour cuts (Harikane+22)</text>
+        <text x="738" y="308" text-anchor="middle" class="fsub">r − i &gt; 1.2  ·  i − z &lt; 0.7</text>
+        <text x="738" y="326" text-anchor="middle" class="fsub">r − i &gt; 1.5 (i − z) + 1.0</text>
+        <text x="738" y="342" text-anchor="middle" class="fsub">same logic, shifted one filter redward</text>
+
+        <rect x="548" y="380" width="380" height="66" rx="10" class="fnode fnode-hl"/>
+        <text x="738" y="408" text-anchor="middle" class="ftext">3,867 r-dropout candidates</text>
+        <text x="738" y="426" text-anchor="middle" class="fsub">81.9% in window — the extra rule pays off</text>
+
+        <path d="M246,232 V254" class="farrow"/>
+        <path d="M246,350 V372" class="farrow"/>
+        <path d="M738,232 V254" class="farrow"/>
+        <path d="M738,350 V372" class="farrow"/>
+      </svg>
+      <p class="flow-note">Read the three cuts as a sentence: "the light collapses across the break (g−r &gt; 1.0), stays flat after it (r−i &lt; 1.0), and does both strongly enough (the diagonal) to escape the region where impostors live." The purity gap between lanes — 61% vs 82% — is caused by exactly one rule: r-dropouts must be <em>invisible</em> in g, a demand that low-redshift interlopers struggle to fake.</p>
+    </div>
+
+    <figure class="fig reveal">
+      <div class="fig-img"><img src="img/fig8_1_colour_colour.png" alt="Colour-colour diagrams for g- and r-dropout samples coloured by redshift" loading="lazy"></div>
+      <figcaption>
+        <span class="fig-tag">Figure 8.1 · the hunting ground</span>
+        <span class="fig-title">Colour–colour space: where LBGs live, and where impostors hide</span>
+        <p>The selection plane itself: g−r against r−i for g-dropouts (left) and r−i against i−z for r-dropouts (right), every point coloured by its LePhare redshift. Top row: candidates inside the target window. Bottom row: colour-selected contaminants. Dashed lines trace the Harikane et al. cuts.</p>
+        <p><b>The physics you can see:</b> within the LBG populations, the points form a rainbow running diagonally — higher-redshift galaxies sit further up and to the right, nearly parallel to the diagonal cut. That gradient is the Lyman break burrowing deeper into the dropout band as redshift grows: more of the filter falls behind the break, the dropout colour reddens, and position in this plane becomes a crude redshift ruler. <b>The warning you can also see:</b> the contaminants (bottom) occupy overlapping territory, clustered near the cut boundaries — colour cuts are a fence, not a wall, and what leaks through is the subject of the next figure.</p>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <hr class="zrule">
+    <h2>Know thine impostors</h2>
+    <div class="prose">
+      <p>
+        Both samples show a second population far below the target windows — and its location is not random.
+        A galaxy with a strong <strong>Balmer/4000 Å break</strong> can impersonate a Lyman-break galaxy: both
+        features produce a red colour across adjacent filters. The impersonation even obeys a formula — a D4000
+        break lands in the dropout band when 1 + z<sub>cont</sub> = (1216/4000)(1 + z<sub>drop</sub>), predicting
+        contaminant peaks at z ≈ 0.52 for g-dropouts and z ≈ 0.82 for r-dropouts. The data deliver peaks at
+        almost exactly those redshifts — a satisfying confirmation that the contamination is understood physics,
+        not mystery noise. A further diffuse population at z ~ 1–3 clings to the cut boundaries, plausibly a mix
+        of dust-reddened starbursts, Lyman-α-forest-dimmed galaxies, and LePhare's own catastrophic errors.
+      </p>
+    </div>
+
+    <figure class="fig reveal">
+      <div class="fig-img"><img src="img/fig8_2_kde.png" alt="KDE contours of LBG and contaminant populations in colour-colour space" loading="lazy"></div>
+      <figcaption>
+        <span class="fig-tag">Figure 8.2 · population territories</span>
+        <span class="fig-title">Three tribes sharing one plane</span>
+        <p>Kernel density contours (enclosing 50% and 90% of each population) replace the individual points of Figure 8.1: genuine-window LBGs in blue, the z &lt; 1 Balmer-break suspects in orange, and the mid-z (1 &lt; z &lt; 3) population in black, against the same selection boundaries.</p>
+        <p><b>How to read the territories:</b> the Balmer-break population forms a compact island <em>inside</em> the LBG region — its similar footprint is exactly what you'd expect from a spectrally analogous feature (one break masquerading as another), which is precisely why colour cuts cannot evict it. The mid-z population behaves differently: its contours press against the lower and diagonal boundaries and spill beyond the LBG locus, the signature of a heterogeneous population smeared across the threshold by dust reddening, forest absorption, or reference-redshift error. <b>Implication:</b> the two contaminant classes need different remedies — the first requires more wavelength leverage (blue bands), the second better reference redshifts — and the figure motivates both of the validation tests that follow.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="fig reveal">
+      <div class="fig-img"><img src="img/fig8_3_zdist_dropouts.png" alt="Redshift distributions of g- and r-dropout selected samples" loading="lazy"></div>
+      <figcaption>
+        <span class="fig-tag">Figure 8.3 · the census</span>
+        <span class="fig-title">Where the selected galaxies actually are</span>
+        <p>Redshift histograms of everything the colour cuts caught: g-dropouts in blue, r-dropouts in orange, with each class's target window shaded. The inset magnifies the low-redshift regime, with dotted lines marking the D4000-formula predictions (z = 0.52 and 0.82).</p>
+        <p><b>The quantitative verdict:</b> 61.4% of g-dropouts and 81.9% of r-dropouts fall inside their windows. The low-z secondary peaks sit squarely on the dotted predictions — the Balmer-break hypothesis passing its sharpest observational test. Note also the g-dropout excess at z = 3–3.5, just below the window: those are likely real LBGs whose break hasn't fully entered the g band, near-misses rather than impostors. <b>The honest caveat, stated in the thesis:</b> all classifications here rest on LePhare photometric redshifts, so every "contaminant" label is a hypothesis awaiting spectroscopic confirmation.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="fig reveal">
+      <div class="fig-img"><img src="img/fig8_4_snr.png" alt="Median blue-band SNR for LBGs versus contaminants" loading="lazy"></div>
+      <figcaption>
+        <span class="fig-tag">Figure 8.4 · the independent tribunal</span>
+        <span class="fig-title">Asking the blue bands to break the tie</span>
+        <p>The decisive cross-examination. For a genuine z ≳ 4 LBG, the Lyman-series absorption should annihilate <em>all</em> flux in the intermediate bands blueward of the break — bands that played no role in the selection. The figure shows the median signal-to-noise ratio in those bands (IB427, IB464, and for r-dropouts IB505) for LBGs (blue) versus contaminants (red), with 16–84th percentile error bars.</p>
+        <p><b>The verdict:</b> LBGs sit at median SNR ≈ 0 — statistically indistinguishable from blank sky, even dipping negative for r-dropouts — exactly as total Lyman absorption demands. Contaminants show persistent positive SNR ≈ 1: faint but real light where a true LBG can emit none, because a z ≈ 0.5 Balmer-break galaxy has no reason to be dark at 4300 Å. <b>Why this figure matters most in the chapter:</b> it is an <em>independent</em> confirmation of the contaminant classification, using data outside both the selection cuts and the reference redshifts. Two unrelated methods pointing at the same impostors is how a hypothesis starts becoming a fact.</p>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <hr class="zrule">
+    <h2>The framework, stress-tested on its home turf</h2>
+    <div class="prose">
+      <p>
+        With the sample characterised, both halves of the framework are turned loose on it — and the results
+        split cleanly along a fault line worth understanding.
+      </p>
+      <p>
+        <strong>The population model gets better.</strong> Retrained on the dropouts, median residuals tighten
+        toward zero in most filters versus the full catalogue. And when trained on g- and r-band LBGs
+        <em>separately</em>, the residual width in the break filter itself collapses — σ drops to 0.82 in HSC g
+        for g-dropouts and 0.70 in HSC r for r-dropouts, the best per-filter figures anywhere in the thesis.
+        The reason is homogeneity: every galaxy in the training set carries the same dramatic feature in the
+        same filter, so the model finally gets to specialise.
+      </p>
+      <p>
+        <strong>The redshift estimator has a harder time — for a reason the physics predicts.</strong> A z ~ 4
+        galaxy offers only one-sided information: everything blueward of the break is gone, leaving a flatter,
+        more degenerate χ² surface. However, comparing with the stratified disgnostic plot of the entire sample in the specific redshfit ranges shows significant improvements when run on only dropouts. The numbers tell the story:
+      </p>
+    </div>
+
+    <div class="tbl-wrap reveal">
+      <table class="tbl">
+        <thead><tr><th>Population</th><th>Method</th><th>σ<sub>NMAD</sub></th><th>Outliers</th></tr></thead>
+        <tbody>
+          <tr><td rowspan="3">g-band LBGs<br><span class="small">z 3.5–4.5 · N = 15,054</span></td>
+              <td>PCA, no prior</td><td class="num bad">0.5030</td><td class="num bad">57.2%</td></tr>
+          <tr><td>PCA, with prior (trained on this population)</td><td class="num">0.1573</td><td class="num">39.4%</td></tr>
+          <tr><td>EAZY</td><td class="num good">0.0307</td><td class="num good">4.6%</td></tr>
+          <tr><td rowspan="3">r-band LBGs<br><span class="small">z 4.5–5.5 · N = 3,167</span></td>
+              <td>PCA, no prior</td><td class="num bad">0.2974</td><td class="num bad">77.1%</td></tr>
+          <tr><td>PCA, with prior</td><td class="num">0.2008</td><td class="num">46.1%</td></tr>
+          <tr><td>EAZY</td><td class="num good">0.0208</td><td class="num good">0.8%</td></tr>
+          <tr><td>Colour-selected contaminants<br><span class="small">0 &lt; z &lt; 1 · N = 3,339</span></td>
+              <td>All methods degrade — EAZY worst at σ = 1.38</td><td class="num bad">0.57–1.65</td><td class="num bad">65–86%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="prose">
+      <p>
+        Three lessons hide in that table. First, <strong>the prior matters far more here than on the full
+        sample</strong> — trained on the dropout population itself, it more than triples the no-prior accuracy
+        for g-LBGs, a preview of what a proper population-model prior could deliver everywhere. Second,
+        <strong>EAZY thrives on the break</strong>: with a strong spectral anchor and well-matched templates it
+        reaches 0.8% outliers on r-LBGs — its best performance anywhere. Third, <strong>everything fails on the
+        contaminants</strong>, and the failure has a fingerprint: 84% of contaminant redshifts are predicted
+        <em>higher</em> than LePhare's — precisely the direction the Balmer↔Lyman degeneracy pushes, since a
+        Balmer break at z ≈ 0.5 photometrically mimics a Lyman break at z ≈ 4. Even the failure mode
+        corroborates the physics.
+      </p>
+    </div>
+
+    <div class="keyidea">
+      <span class="mono">Chapter in one line</span>
+      28,377 candidate early-universe galaxies, a contaminant population identified, predicted, and independently
+      convicted — and a framework that demonstrably transfers from the general catalogue to the population it
+      was designed for.
+    </div>
+
+    <div class="pager">
+      <a href="redshift.html">← Previous<b>Redshift Inference</b></a>
+      <a class="next" href="findings.html">Next →<b>Findings &amp; Future</b></a>
+    </div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <div>
+      <b>Probabilistic Photometric Modelling of Galaxies</b><br>
+      Pranav R Iyengar · Imperial College London · 2026
+    </div>
+    
+</footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Building the Model — Reading the Light</title>
+<meta name="description" content="Why SPS templates fail at high redshift, how galaxy spectra get compressed to 8 numbers with PCA and NMF, and how the COSMOS2020 data are prepared.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="index.html">Reading the Light <span class="z">z→</span></a>
+    <button class="nav-toggle">menu</button>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="physics.html">The Physics</a>
+      <a href="model.html" class="active">Building the Model</a>
+      <a href="vila.html">VILA</a>
+      <a href="population.html">Population Model</a>
+      <a href="redshift.html">Redshift</a>
+      <a href="lbg.html">Lyman Break Galaxies</a>
+      <a href="findings.html">Findings</a>
+    </div>
+  </div>
+</nav>
+
+<header class="page-head">
+  <div class="wrap">
+    <span class="eyebrow">Chapter 02 — Foundations · thesis ch. 3–4</span>
+    <h1>Building the Model</h1>
+    <p class="standfirst">
+      To interpret photometry you need a generative model: a recipe for what a galaxy's light <em>could</em> look
+      like. The industry standard builds that recipe from stellar physics — however, it cracks  at high redshift.    </p>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <hr class="zrule">
+    <h2>Why physics-first templates crack at high redshift</h2>
+    <div class="prose">
+      <p class="lede">
+        Stellar Population Synthesis (SPS) models — Bruzual &amp; Charlot's BC03, Maraston's M05, the modern
+        FSPS — assemble a galaxy spectrum from first principles by assuming a star-formation history, a metallicity,
+        an initial mass function, a dust law, and sum up the light of every star that recipe implies. It's an
+        elegant machine, and it underpins essentially all survey SED-fitting, from EAZY and LePhare to the
+        state-of-the-art <strong>pop-cosmos</strong> population model this thesis builds beside.
+      </p>
+      <p>
+        But every SPS spectrum inherits every assumption baked into it, and beyond z ≈ 4 those assumptions get
+        shaky in compounding ways: poorly-understood stellar phases (the infamous thermally-pulsating AGB stars)
+        inject factor-of-2 uncertainties into mass estimates for young galaxies; UV output depends on stellar
+        rotation and binarity that standard codes don't model; and observed z ≈ 7 galaxies show ultraviolet
+        slopes <em>bluer than the models can produce at all</em> without resorting to implausibly young, dust-free,
+        nearly metal-free populations. pop-cosmos is trained on galaxies at
+        r &lt; 25 and z ≲ 4, so its learned spectral shapes are extrapolations exactly where LBG science lives.
+      </p>
+      <p>
+        The alternative philosophy: stop prescribing spectra from stellar theory and <strong>learn the spectral
+        shapes present in the data</strong>. Decompose a big library of realistic SEDs into a small set of basis
+        spectra, and describe any galaxy as a weighted mix of them. The weights — the <em>coefficients</em> —
+        become the coordinates of "galaxy space." Extreme UV slopes, odd emission lines, unusual dust: if it's
+        in the library, it's representable. No stellar-evolution assumption stands between the data and the fit.
+      </p>
+    </div>
+    <div class="keyidea">
+      <span class="mono">The design decision</span>
+      Replace "a galaxy is a point in (age, metallicity, dust, SFH) space" with "a galaxy is n numbers (coefficients) multiplied by the
+      n basis spectra." Everything downstream — the IGM treatment, the population model, the redshift pipeline —
+      operates on these n numbers.
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <hr class="zrule">
+    <h2>Preparing 419,654 galaxies</h2>
+    <div class="prose">
+      <p>
+        The raw catalogue is not analysis-ready. This work uses the FARMER photometry (profile-fitting extraction)
+        in 26 bands, then applies cuts and corrections: a combined sky mask removing
+        regions near bright stars and outside uniform coverage; removal of stars; a requirement of detection in at least 8 bands; a magnitude cut in the infrared (<26); and a
+        redshift ceiling of z ≤ 8. Each surviving flux is corrected for Milky Way dust (which varies across the sky)
+        and for the small systematic offsets between measured and template fluxes that every survey carries. Finally,
+        a realistic noise model inflates the raw uncertainties with per-band zeropoint corrections and error floors —
+        because pipelines are always slightly overconfident. Out the other end: <strong>419,654 galaxies with
+        trustworthy fluxes and honest error bars.</strong>
+      </p>
+    </div>
+
+    <figure class="fig reveal">
+      <div class="fig-img"><img src="img/fig4_1_filters.png" alt="Transmission curves of the 26 COSMOS photometric bands used in this work" loading="lazy"></div>
+      <figcaption>
+        <span class="fig-tag">Figure 4.1 · the instrument, drawn</span>
+        <span class="fig-title">The 26 windows through which every galaxy is seen</span>
+        <p>Normalised transmission curves for all 26 photometric bands used in this work, spanning ~3,500&nbsp;Å (ultraviolet) to ~45,000&nbsp;Å (mid-infrared). Each coloured bump is one filter: the broad tall curves are the CFHT u band and the Subaru HSC broadbands (g, r, i, z, y); the dense picket fence of medium bumps are Subaru's intermediate bands (scaled to ⅓ height for legibility); the two thin spikes are narrowbands NB711 and NB816 (scaled to 0.2); and the wide curves on the right are UltraVISTA's near-infrared Y, J, H, Ks and Spitzer/IRAC's two infrared channels.</p>
+        <p> This comb of windows <em>is</em> the measurement apparatus. Every model spectrum in the thesis must be multiplied through these exact curves before it can be compared to data, and the density of the comb in the optical is what lets a photometric survey localise spectral breaks — and hence redshifts — without a spectrograph. The sparse coverage between 1 and 4.5 μm, by contrast, is where the model is least constrained.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="fig reveal">
+      <div class="fig-img"><img src="img/fig4_2_zdist.png" alt="Redshift distribution of the final COSMOS2020 sample" loading="lazy"></div>
+      <figcaption>
+        <span class="fig-tag">Figure 4.2 · the sample's shape</span>
+        <span class="fig-title">Where the 419,654 galaxies live in cosmic time</span>
+        <p>The photometric redshift distribution (from LePhare template fitting) of the final cleaned sample. The distribution rises steeply, peaks near z ≈ 1, and falls off with a long tail extending to the z = 8 cutoff; the dashed orange line marks the median, z = 1.36.</p>
+        <p><b>How to read it:</b> the peak at z ≈ 1 is not where the universe keeps most of its galaxies — it's where <em>this survey's depth</em> keeps most of its detections. The infrared magnitude cut removes faint objects, and faint correlates with far, so high-redshift galaxies are progressively filtered out. <b>The implication threads through the whole thesis:</b> any model trained on this sample sees vastly more low-z examples than high-z ones. That imbalance is why the redshift estimator's data-driven prior (Chapter 05) drags uncertain high-z galaxies toward lower redshifts, and why performance metrics must always be read per redshift bin, never as one global number.</p>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <hr class="zrule">
+    <h2>Compressing a spectrum into eight numbers</h2>
+    <div class="prose">
+      <p>
+        The template library is 30,000 realistic galaxy SEDs (synthesised with FSPS at the best-fit pop-cosmos
+        parameters of 30,000 real COSMOS galaxies, dust included), each sampled at 5,994 wavelength points. Feeding
+        all the 30000 SEDs into inference would be wasteful, since galaxy spectra are
+        hugely correlated. Two classical decompositions do the compression:
+      </p>
+      <ul>
+        <li><strong>PCA (Principal Component Analysis)</strong> finds the orthogonal directions of maximum variance.
+          Ruthlessly efficient — 8 components reconstruct the library with R² = 1.0000 — but its components swing
+          negative, so no single component looks like a physical spectrum.</li>
+        <li><strong>NMF (Non-negative Matrix Factorisation)</strong> forbids negative values, so components combine
+          purely additively, like real light. Each basis vector resembles an actual spectrum. The price: slightly
+          lower fidelity (R² = 0.9987) and an iterative fit with no closed form.</li>
+      </ul>
+      <p>
+        The thesis uses both, deliberately: <strong>NMF where physical interpretability matters</strong> (the IGM
+        model and population model) and <strong>PCA where raw reconstruction power matters</strong> (the redshift
+        pipeline). That split becomes a genuine plot point later.
+      </p>
+    </div>
+
+    <figure class="fig reveal">
+      <div class="fig-img"><img src="img/fig4_3_pca_nmf.png" alt="PCA and NMF basis spectra side by side" loading="lazy"></div>
+      <figcaption>
+        <span class="fig-tag">Figure 4.3 · two ways to compress a galaxy</span>
+        <span class="fig-title">PCA vs NMF: the mathematician's basis and the physicist's basis</span>
+        <p><b>Left:</b> the 8 PCA basis vectors. They oscillate freely around zero — negative flux is allowed by construction — and no individual curve means anything physical on its own; only their weighted sums do. The sharp features near 10⁴&nbsp;Å and beyond correspond to strong emission-line regions in the template library, where spectra vary violently from galaxy to galaxy. <b>Right:</b> the 8 NMF basis vectors, strictly non-negative and visually spectrum-like, with pronounced structure at ~500–1000&nbsp;Å.</p>
+        <p><b>The trade-off in one sentence:</b> PCA is variance-optimal but physically agnostic; NMF is physically interpretable but variance-suboptimal (R² of 1.0000 vs 0.9987 over the library). <b>Implication:</b> whenever a component must be multiplied by a physical transmission curve — as in the IGM fitting — non-negativity is essential, so NMF gets the job; when the task is squeezing maximum information from 26 fluxes, PCA does.</p>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <hr class="zrule">
+    <h2>Teaching the basis to travel through time</h2>
+    <div class="prose">
+      <p>
+        The basis is defined in the rest frame, but real galaxies are observed at every redshift up to 8. So each
+        component is redshifted — wavelengths stretched by (1+z), fluxes dimmed accordingly — and projected through
+        all 26 filter curves using the <code>sedpy</code> package. Doing this on the fly for every galaxy would be
+        crushing, so it's all <strong>precomputed on a grid of 501 redshifts</strong> spanning z ∈ [0, 8], producing
+        a tensor of synthetic photometry indexed by (redshift, component, filter). An interpolator over this grid
+        makes model fluxes at <em>any</em> redshift essentially free — the trick that makes catalogue-scale inference
+        tractable at all.
+      </p>
+    </div>
+
+    <figure class="fig reveal">
+      <div class="fig-img"><img src="img/fig4_4_redshifting.png" alt="Validation of the redshifting procedure on the mean template" loading="lazy"></div>
+      <figcaption>
+        <span class="fig-tag">Figure 4.4 · sanity check with style</span>
+        <span class="fig-title">Redshifting works — and un-redshifting proves it</span>
+        <p><b>Left:</b> the mean PCA template redshifted to z = 0.0, 0.5, 1.0 and 2.0. Two effects are visible exactly as the physics of Chapter 01 demands: the spectral peak slides rightward (wavelengths stretch by 1+z) and the whole curve sinks (cosmological dimming). <b>Right:</b> the acid test — each redshifted curve is passed through the <em>inverse</em> transformation. All four collapse perfectly onto the original rest-frame template (dashed black).</p>
+        <p><b>Why bother showing this?</b> Every quantity in the thesis flows through this redshifting machinery thousands of times; a subtle factor-of-(1+z) bug here would silently corrupt every result downstream. Demonstrating that the transformation is exactly invertible to numerical precision certifies the pipeline's most-used moving part before anything is built on top of it.</p>
+      </figcaption>
+    </figure>
+
+    <!-- assembly flowchart -->
+    <div class="flow reveal">
+      <div class="flow-head">
+        <span class="fig-tag">Workflow · forward-model assembly</span>
+        <b>From template library to instant synthetic photometry</b>
+      </div>
+      <svg viewBox="0 0 980 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Forward model assembly flowchart">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#5A6C9C"/>
+          </marker>
+          <linearGradient id="specStroke" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#7DB4FF"/><stop offset=".4" stop-color="#8FE0C0"/>
+            <stop offset=".7" stop-color="#F3C879"/><stop offset="1" stop-color="#FF7A5C"/>
+          </linearGradient>
+        </defs>
+        <rect x="16" y="60" width="168" height="76" rx="10" class="fnode"/>
+        <text x="100" y="88" text-anchor="middle" class="ftext">30,000 SEDs</text>
+        <text x="100" y="106" text-anchor="middle" class="fsub">5,994 λ points each</text>
+        <text x="100" y="122" text-anchor="middle" class="fsub">dust included</text>
+
+        <rect x="222" y="60" width="168" height="76" rx="10" class="fnode"/>
+        <text x="306" y="83" text-anchor="middle" class="ftext">Preprocess</text>
+        <text x="306" y="101" text-anchor="middle" class="fsub">mass-normalise · clip</text>
+        <text x="306" y="117" text-anchor="middle" class="fsub">log branch for NMF</text>
+
+        <rect x="428" y="60" width="168" height="76" rx="10" class="fnode fnode-hl"/>
+        <text x="512" y="83" text-anchor="middle" class="ftext">PCA / NMF</text>
+        <text x="512" y="101" text-anchor="middle" class="fsub">K = 8 components</text>
+        <text x="512" y="117" text-anchor="middle" class="fsub">R² = 1.000 / 0.9987</text>
+
+        <rect x="634" y="60" width="168" height="76" rx="10" class="fnode"/>
+        <text x="718" y="83" text-anchor="middle" class="ftext">Redshift + filters</text>
+        <text x="718" y="101" text-anchor="middle" class="fsub">501-point z grid</text>
+        <text x="718" y="117" text-anchor="middle" class="fsub">× 26 bands (sedpy)</text>
+
+        <rect x="840" y="60" width="128" height="76" rx="10" class="fnode fnode-hl"/>
+        <text x="904" y="88" text-anchor="middle" class="ftext">Interpolator</text>
+        <text x="904" y="106" text-anchor="middle" class="fsub">flux at any z, free</text>
+
+        <path d="M184,98 H214" class="farrow"/>
+        <path d="M390,98 H420" class="farrow"/>
+        <path d="M596,98 H626" class="farrow"/>
+        <path d="M802,98 H832" class="farrow"/>
+      </svg>
+      <p class="flow-note">The output object: a fast function mapping (redshift, 8 coefficients) → predicted flux in 26 filters. Chapters 03–05 each attach a different inference engine to this same function.</p>
+    </div>
+
+    <div class="pager">
+      <a href="physics.html">← Previous<b>The Physics</b></a>
+      <a class="next" href="vila.html">Next →<b>VILA</b></a>
+    </div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <div>
+      <b>Probabilistic Photometric Modelling of Galaxies</b><br>
+      Pranav R Iyengar · Imperial College London · 2026
+    </div>
+    
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>

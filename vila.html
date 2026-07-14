@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VILA — Bottling the Cosmic Fog — Reading the Light</title>
+<meta name="description" content="VILA: a Monte Carlo, per-galaxy model of intergalactic hydrogen absorption that cuts photometric outliers from 17% to 2.26%.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="index.html">Reading the Light <span class="z">z→</span></a>
+    <button class="nav-toggle">menu</button>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="physics.html">The Physics</a>
+      <a href="model.html">Building the Model</a>
+      <a href="vila.html" class="active">VILA</a>
+      <a href="population.html">Population Model</a>
+      <a href="redshift.html">Redshift</a>
+      <a href="lbg.html">Lyman Break Galaxies</a>
+      <a href="findings.html">Findings</a>
+    </div>
+  </div>
+</nav>
+
+<header class="page-head">
+  <div class="wrap">
+    <span class="eyebrow">Chapter 03 — Contribution I · thesis ch. 5</span>
+    <h1>VILA: Bottling the Cosmic Fog</h1>
+    <p class="standfirst">
+      <strong>V</strong>ariable <strong>I</strong>ntergalactic <strong>L</strong>ine-of-sight
+      <strong>A</strong>bsorption. Instead of correcting every galaxy with the same average absorption,
+      VILA simulates 1,000 possible arrangements of hydrogen clouds per galaxy and lets each galaxy's own
+      photometry vote on which arrangements are believable.     </p>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <hr class="zrule">
+    <h2>The problem with averages</h2>
+    <div class="prose">
+      <p class="lede">
+        Classic IGM prescriptions — Madau (1995), Meiksin (2006), Inoue et al. (2014) — all answer the same
+        question: <em>on average</em>, how much light does the intergalactic medium absorb at each wavelength for a
+        source at redshift z? They deliver one mean transmission curve per redshift, and virtually every SED-fitting
+        code applies it identically to every galaxy.
+      </p>
+      <p>
+        But the absorbers are discrete clouds, scattered randomly. Two galaxies at the same redshift on opposite
+        sides of the COSMOS field look through completely different cloud populations. And the distribution of
+        outcomes is violently skewed: most sightlines are fairly clean, while an unlucky few hit a thick Lyman-limit
+        system and go nearly opaque. The <em>mean</em> of such a lopsided distribution describes almost no individual
+        sightline. Correcting every galaxy with the mean therefore guarantees you're wrong about most of them —
+        systematically too dark for the lucky ones, far too bright for the unlucky ones.
+      </p>
+    </div>
+    <div class="keyidea">
+      <span class="mono">VILA's move</span>
+      Don't marginalise the cloud randomness analytically before looking at the data. Simulate the randomness explicitly using a Monte Carlo strategy —
+      1,000 sightlines per galaxy — then weight each simulated sightline by how well it explains <em>that galaxy's</em>
+      observed fluxes. The correction becomes per-galaxy, data-informed, and honest about variance.
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap-wide">
+    <div class="flow reveal">
+      <div class="flow-head">
+        <span class="fig-tag">Workflow · the VILA engine</span>
+        <b>From cloud statistics to a per-galaxy absorption correction</b>
+      </div>
+      <svg viewBox="0 0 980 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="VILA workflow flowchart">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#5A6C9C"/>
+          </marker>
+          <linearGradient id="specStroke" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#7DB4FF"/><stop offset=".4" stop-color="#8FE0C0"/>
+            <stop offset=".7" stop-color="#F3C879"/><stop offset="1" stop-color="#FF7A5C"/>
+          </linearGradient>
+        </defs>
+
+        <text x="18" y="26" class="flabel">STAGE 1 — SIMULATE THE FOG (once, offline)</text>
+
+        <rect x="16" y="42" width="220" height="80" rx="10" class="fnode"/>
+        <text x="126" y="68" text-anchor="middle" class="ftext">Absorber statistics</text>
+        <text x="126" y="86" text-anchor="middle" class="fsub">Inoue+14 distribution fns</text>
+        <text x="126" y="102" text-anchor="middle" class="fsub">LAF + DLA populations</text>
+
+        <rect x="286" y="42" width="220" height="80" rx="10" class="fnode"/>
+        <text x="396" y="63" text-anchor="middle" class="ftext">Draw a sightline</text>
+        <text x="396" y="81" text-anchor="middle" class="fsub">Poisson № of clouds</text>
+        <text x="396" y="97" text-anchor="middle" class="fsub">place each in z, draw its</text>
+        <text x="396" y="113" text-anchor="middle" class="fsub">column density N_HI</text>
+
+        <rect x="556" y="42" width="220" height="80" rx="10" class="fnode"/>
+        <text x="666" y="63" text-anchor="middle" class="ftext">Optical depths</text>
+        <text x="666" y="81" text-anchor="middle" class="fsub">9 Lyman lines (Voigt)</text>
+        <text x="666" y="97" text-anchor="middle" class="fsub">+ Lyman continuum</text>
+        <text x="666" y="113" text-anchor="middle" class="fsub">→ T = e^−τ per filter</text>
+
+        <rect x="812" y="42" width="156" height="80" rx="10" class="fnode fnode-hl"/>
+        <text x="890" y="68" text-anchor="middle" class="ftext">×1,000 sightlines</text>
+        <text x="890" y="86" text-anchor="middle" class="fsub">per grid redshift</text>
+        <text x="890" y="102" text-anchor="middle" class="fsub">z = 1.9 → 8.0, Δz = 0.1</text>
+
+        <path d="M236,82 H278" class="farrow"/>
+        <path d="M506,82 H548" class="farrow"/>
+        <path d="M776,82 H804" class="farrow"/>
+
+        <text x="18" y="188" class="flabel">STAGE 2 — INTERPOLATE BETWEEN GRID REDSHIFTS</text>
+        <rect x="16" y="204" width="952" height="70" rx="10" class="fnode"/>
+        <text x="492" y="231" text-anchor="middle" class="ftext">Gaussian copula interpolation</text>
+        <text x="492" y="251" text-anchor="middle" class="fsub">interpolates the full n-dimensional joint distribution of transmissions,marginals AND correlations between filters.</text>
+
+        <path d="M890,122 C890,150 700,175 492,196" class="farrow"/>
+
+        <text x="18" y="332" class="flabel">STAGE 3 — CONDITION ON EACH GALAXY (419,654 times)</text>
+
+        <rect x="16" y="348" width="220" height="86" rx="10" class="fnode"/>
+        <text x="126" y="374" text-anchor="middle" class="ftext">Intrinsic SED guess</text>
+        <text x="126" y="392" text-anchor="middle" class="fsub">least-squares fit of 8</text>
+        <text x="126" y="408" text-anchor="middle" class="fsub">NMF components to the</text>
+        <text x="126" y="424" text-anchor="middle" class="fsub">galaxy's photometry</text>
+
+        <rect x="286" y="348" width="220" height="86" rx="10" class="fnode"/>
+        <text x="396" y="374" text-anchor="middle" class="ftext">Score all 1,000</text>
+        <text x="396" y="392" text-anchor="middle" class="fsub">predicted flux = SED × T⁽ᵏ⁾</text>
+        <text x="396" y="408" text-anchor="middle" class="fsub">Student-t likelihood vs</text>
+        <text x="396" y="424" text-anchor="middle" class="fsub">observed fluxes</text>
+
+        <rect x="556" y="348" width="220" height="86" rx="10" class="fnode"/>
+        <text x="666" y="374" text-anchor="middle" class="ftext">Weight &amp; average</text>
+        <text x="666" y="392" text-anchor="middle" class="fsub">softmax of log-likelihoods</text>
+        <text x="666" y="408" text-anchor="middle" class="fsub">(log-sum-exp, stable)</text>
+        <text x="666" y="424" text-anchor="middle" class="fsub">plausible sightlines dominate</text>
+
+        <rect x="812" y="348" width="156" height="86" rx="10" class="fnode fnode-hl"/>
+        <text x="890" y="380" text-anchor="middle" class="ftext">⟨T⟩ per galaxy</text>
+        <text x="890" y="398" text-anchor="middle" class="fsub">posterior-mean IGM</text>
+        <text x="890" y="414" text-anchor="middle" class="fsub">transmission, per band</text>
+
+        <path d="M492,274 C492,300 200,320 126,340" class="farrow"/>
+        <path d="M236,391 H278" class="farrow"/>
+        <path d="M506,391 H548" class="farrow"/>
+        <path d="M776,391 H804" class="farrow"/>
+
+        <text x="18" y="498" class="flabel">USED BY →</text>
+        <rect x="110" y="474" width="300" height="52" rx="10" class="fnode"/>
+        <text x="260" y="505" text-anchor="middle" class="ftext">Population model (Ch. 04)</text>
+        <rect x="450" y="474" width="300" height="52" rx="10" class="fnode"/>
+        <text x="600" y="505" text-anchor="middle" class="ftext">LBG analysis (Ch. 06)</text>
+        <path d="M866,434 C820,470 500,470 412,494" class="farrow"/>
+        <path d="M890,434 C880,466 800,478 754,494" class="farrow"/>
+      </svg>
+      <p class="flow-note">Stage 1 runs once and produces a library. Stage 3 is where VILA earns its name: each galaxy gets its own posterior over the absorption, conditioned on its own fluxes — no two galaxies share a correction.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <hr class="zrule">
+    <h2>Does the simulator reproduce the real cloud statistics?</h2>
+    <div class="prose">
+      <p>
+        Before trusting 419&nbsp;million sightline evaluations, the generator has to be validated against the
+        published absorber statistics it claims to sample. Clouds are drawn as a Poisson process: the expected
+        number of clouds up to the source redshift comes from integrating the Inoue et al. (2014) rate functions;
+        each cloud is then placed at a redshift via inverse-transform sampling and assigned a column density from a
+        Schechter-like distribution (sampled numerically in log space, since the function can't be inverted
+        analytically). Two figures certify the machinery.
+      </p>
+    </div>
+
+    <figure class="fig reveal">
+      <div class="fig-img"><img src="img/fig5_1_absorbers.png" alt="Number of intergalactic absorbers per unit redshift versus absorber redshift" loading="lazy"></div>
+      <figcaption>
+        <span class="fig-tag">Figure 5.1 · validation, part one</span>
+        <span class="fig-title">The simulated universe has the right number of clouds</span>
+        <p>The number of intergalactic absorbers per unit redshift, dn/dz, generated by VILA along 1,000 sightlines out to z = 8, as a function of the absorbers' redshift (plotted as 1+z). Four column-density thresholds are shown with Poisson error bars: crosses for the abundant thin Lyman-α forest clouds (N<sub>HI</sub> &gt; 10¹³·⁶⁴ cm⁻²), open circles for Lyman-limit systems, triangles for sub-DLAs, and squares for the rare, opaque DLAs.</p>
+        <p><b>What to look for:</b> the forest counts (top curve) steepen sharply above z ≈ 2 and again above z ≈ 4 — the young universe was denser — while the DLA counts (bottom) barely evolve. The vertical spread between curves spans about three orders of magnitude: thin clouds outnumber thick ones ~1000:1, yet a single thick one can blacken a sightline. <b>The verdict:</b> across all four regimes and the full redshift range, this reproduces Figure 2 of Inoue &amp; Iwata (2008) — the sampler is statistically faithful to the observed IGM.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="fig reveal">
+      <div class="fig-img"><img src="img/fig5_2_vila_sampling.png" alt="VILA absorber sampling validated against the Inoue et al. 2014 analytic rate functions" loading="lazy"></div>
+      <figcaption>
+        <span class="fig-tag">Figure 5.2 · validation, part two</span>
+        <span class="fig-title">Monte Carlo counts land exactly on the analytic curves</span>
+        <p>Binned absorber counts from 1,000 VILA sightlines (open circles with Poisson error bars) overlaid on the analytic Inoue et al. (2014) rate functions (solid lines), separately for the Lyman-α-forest component (left) and the damped-Lyman-α component (right). Dashed vertical lines mark the built-in redshift breaks of the rate functions — z = 1.2 and z = 4.7 for the forest, z = 2 for DLAs — where the power-law slope of cosmic cloud evolution changes.</p>
+        <p><b>How to read it:</b> note the y-axes — the forest panel counts hundreds of clouds per unit redshift while the DLA panel counts around one, illustrating that LAF clouds are much more common. Every simulated point sits on its analytic curve within the error bars, through both slope breaks. <b>Implication:</b> the Poisson placement, the inverse-CDF redshift assignment, and the column-density draws are all working; any downstream disagreement with data can now be attributed to physics or modelling choices, not to a broken random-number pipeline.</p>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <hr class="zrule">
+    <h2>What 1,000 sightlines actually look like</h2>
+    <div class="prose">
+      <p>
+        For each cloud on each sightline, the absorption is computed from real atomic physics: photoionisation
+        (the Lyman continuum) plus the first nine Lyman-series lines, each with a Voigt profile evaluated through
+        the fast Tepper-García/Harris expansion, accurate to 10⁻⁴. Exponentiate the summed optical depth and you get
+        that sightline's transmission at each filter's wavelength. Repeat 1,000 times per redshift grid point and the
+        result is not a curve but a <em>cloud of curves</em> — the full probability distribution of the absorption. Between grid points, a Gaussian copula interpolates the whole n-dimensional joint distribution at once,
+        preserving the correlations between filters that naive per-filter interpolation would destroy.
+      </p>
+    </div>
+
+    <figure class="fig reveal">
+      <div class="fig-img"><img src="img/fig5_3_vila_transmission.png" alt="VILA IGM transmission distributions at four source redshifts" loading="lazy"></div>
+      <figcaption>
+        <span class="fig-tag">Figure 5.3 · the money plot of the IGM chapter</span>
+        <span class="fig-title">The absorption is not a curve — it's a distribution, and a skewed one</span>
+        <p>IGM transmission versus observed wavelength at four source redshifts (z = 3, 4, 5, 6), evaluated at the effective wavelengths of the IGM-affected COSMOS filters. In each panel: the solid coloured line is the VILA <em>median</em> over 1,000 sightlines; the dotted coloured line is the VILA <em>mean</em>; the dark and light shaded bands enclose the 16–84th and 2–98th percentile ranges; the dashed black curve is the Inoue et al. (2014) analytic mean; vertical dotted lines mark the observed-frame Lyman limit and Lyman-α wavelengths. Redward of Lyman-α, transmission is exactly 1 by construction — the fog cannot touch those photons.</p>
+        <p><b>Three things to notice.</b> First, the VILA mean sits precisely on the analytic I14 mean — the model contains the standard model as its average, as it must. Second, the 2–98% band spans nearly the entire [0, 1] range at many wavelengths: the transmission distribution is effectively bimodal, split between clean sightlines and ones that hit a Lyman-limit system and went dark. Third, the median sits <em>above</em> the mean, especially at lower redshift — the classic signature of a left-skewed distribution, where a minority of opaque sightlines drags the average down below the typical case. Applying the mean curve to every galaxy misdescribes almost all of them. The spread is real physics, and only a per-galaxy, likelihood-weighted treatment can use it.</p>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <hr class="zrule">
+    <h2>The scoreboard</h2>
+    <div class="prose">
+      <p>
+        The test: fit each z ≥ 2 galaxy's photometry with the 8-component basis, predict its fluxes in the
+        IGM-affected blue bands, and count how badly the predictions miss — under three treatments of the fog. The
+        residual is (data − model)/uncertainty, so |r| &gt; 3 means the prediction is off by more than three error
+        bars: an outlier.
+      </p>
+    </div>
+
+    <div class="tbl-wrap reveal">
+      <table class="tbl">
+        <caption>Normalised residuals in IGM-affected bands · galaxies at z ≥ 2</caption>
+        <thead><tr><th>IGM treatment</th><th>Median residual</th><th>Scatter (NMAD)</th><th>Outlier fraction |r| &gt; 3</th></tr></thead>
+        <tbody>
+          <tr><td>No correction (T = 1)</td><td class="num bad">−0.51 (too bright)</td><td class="num">1.25</td><td class="num">11.62%</td></tr>
+          <tr><td>Inoue+14 mean curve</td><td class="num bad">+1.53 (too faint)</td><td class="num">1.24</td><td class="num">17.00%</td></tr>
+          <tr><td><b>VILA (per-galaxy)</b></td><td class="num good">+0.15</td><td class="num good">0.68</td><td class="num good">2.26%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tbl-wrap reveal">
+      <table class="tbl">
+        <caption>Per-filter outlier fraction · selected broadbands</caption>
+        <thead><tr><th>Filter</th><th>No IGM</th><th>I14 mean</th><th>VILA</th></tr></thead>
+        <tbody>
+          <tr><td>HSC g</td><td class="num">14.29%</td><td class="num bad">29.03%</td><td class="num good">0.19%</td></tr>
+          <tr><td>HSC r</td><td class="num">24.50%</td><td class="num bad">42.59%</td><td class="num good">0.03%</td></tr>
+          <tr><td>HSC i</td><td class="num bad">98.73%</td><td class="num">40.52%</td><td class="num good">0.32%</td></tr>
+          <tr><td><b>All 18 filters</b></td><td class="num">11.62%</td><td class="num">17.00%</td><td class="num good"><b>2.26%</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="prose">
+      <p>
+        <strong>Applying the
+        standard mean IGM curve is often <em>worse</em> than applying no correction at all.</strong> Why? The
+        least-squares fit already quietly absorbs part of the IGM dimming into its coefficients while matching the
+        blue bands. Stacking the full mean absorption on top then over-corrects, leaving the model too faint. VILA
+        sidesteps this by fitting only the <em>residual</em> absorption the coefficients couldn't explain — which is
+        precisely what the data can constrain. The result: a median residual of 0.15 (nearly unbiased), scatter
+        <em>below</em> the noise level, and an 87% reduction in outliers relative to the standard approach.
+      </p>
+      <h3>Honest small print</h3>
+      <ul>
+        <li>Clouds are placed as a pure Poisson process; real absorbers cluster slightly.</li>
+        <li>Copula interpolation between grid points carries ~9% error in the mean transmission (Especially at z>6 where the gunn peterson trough is observed) — solvable with a finer grid and more compute, and computing the IGM on a finer grid which can be read off directly for every galaxy, eliminating the need for interpolation.</li>
+        <li>1,000 sightlines (vs. 10,000 in the reference implementation) can leave weights noisy for galaxies whose photometry disfavours most sightlines.</li>
+        <li>Because the coefficients absorb some IGM, VILA's output is the <em>residual</em> absorption, not the raw physical transmission — fitting coefficients on IGM-free red bands would fix this, given more red filters than COSMOS offers.</li>
+      </ul>
+    </div>
+
+    <div class="pager">
+      <a href="model.html">← Previous<b>Building the Model</b></a>
+      <a class="next" href="population.html">Next →<b>Population Model</b></a>
+    </div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <div>
+      <b>Probabilistic Photometric Modelling of Galaxies</b><br>
+      Pranav R Iyengar · Imperial College London · 2026
+    </div>
+    
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>

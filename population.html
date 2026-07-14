@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Population Model — Reading the Light</title>
+<meta name="description" content="A modified Extreme Deconvolution algorithm — redshift-dependent mean, Student-t robustness — learns the intrinsic distribution of galaxy spectra beneath the noise.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="index.html">Reading the Light <span class="z">z→</span></a>
+    <button class="nav-toggle">menu</button>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="physics.html">The Physics</a>
+      <a href="model.html">Building the Model</a>
+      <a href="vila.html">VILA</a>
+      <a href="population.html" class="active">Population Model</a>
+      <a href="redshift.html">Redshift</a>
+      <a href="lbg.html">Lyman Break Galaxies</a>
+      <a href="findings.html">Findings</a>
+    </div>
+  </div>
+</nav>
+
+<header class="page-head">
+  <div class="wrap">
+    <span class="eyebrow">Chapter 04 — Contribution II · thesis ch. 6</span>
+    <h1>The Population Model</h1>
+    <p class="standfirst">
+      Every galaxy's fitted coefficients are the truth plus noise. Fit a distribution to them naively and you learn
+      the noise, not the truth. This chapter deconvolves the two — with an Extreme Deconvolution algorithm rebuilt
+      to respect two facts about real galaxies: they evolve with redshift, and they have heavy tails.
+    </p>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <hr class="zrule">
+    <h2>The setup: from fluxes to coefficients</h2>
+    <div class="prose">
+      <p class="lede">
+        With VILA's per-galaxy absorption corrections in hand, each galaxy's 20 fluxes are fitted with the 8 NMF basis
+        spectra (redshifted, IGM-attenuated, filter-projected). 20 filters are used in this chapter as the UVISTA and IRAC filters have too much influence in the deciding the coefficients, and hence makes the inference in the other filters worse. The resulting 8 coefficients are that galaxy's
+        address in spectrum-space. Do this 419,654 times to get the coefficients for each galaxy, it encodes what kinds of galaxies exist, in what proportions, at each cosmic epoch.
+        Sample from it and you can fabricate synthetic surveys before a telescope ever opens its shutter.
+      </p>
+      <p>
+        A detail that matters: not all 26 filters get a vote. A Fisher-information audit shows the infrared bands
+        exert wildly disproportionate leverage on the fit — IRAC channel 2 has an influence score of 1,681 versus
+        ~29 for a typical optical broadband. Included, they hijack the coefficients, nail their own residuals to
+        zero, and wreck everyone else's. Since these bands are also untouched by the IGM, they are simply excluded:
+        the population model trains on 20 optical/near-IR bands.
+      </p>
+      <p>
+        The first pass at coefficients uses closed-form least squares. But plot the resulting coefficient
+        distribution and a problem stares back:
+      </p>
+    </div>
+
+    <figure class="fig reveal">
+      <div class="fig-img"><img src="img/fig6_1_ls_coeffs.png" alt="Distribution of least squares coefficients with Student-t and Gaussian overlays" loading="lazy"></div>
+      <figcaption>
+        <span class="fig-tag">Figure 6.1 · the case for heavy tails</span>
+        <span class="fig-title">Galaxies do not believe in the Gaussian</span>
+        <p>Histograms of the fitted least-squares coefficients across the full sample, one panel per NMF component. Overlaid on each: a Student-t curve with ν = 2 degrees of freedom (solid red) and a Gaussian matched to the data's standard deviation (dotted green). Every panel shows the same anatomy — a needle-sharp central peak flanked by long, fat tails.</p>
+        <p><b>How to read it:</b> the Gaussian is forced into an impossible compromise: to accommodate the tails it broadens until it badly overshoots the peak, and it still assigns essentially zero probability to the most extreme galaxies. The Student-t, with its polynomially-decaying tails, traces both the spike and the outskirts. A fit of the empirical distribution yields ν ≈ 1.98 — about as heavy-tailed as distributions get while keeping a finite mean. <b>The implication cascades through the chapter:</b> both the per-galaxy fitting <em>and</em> the population-level prior are switched from Gaussian to Student-t. Under a Gaussian, the rare galaxies in the tails would be treated as errors and effectively deleted from the learned population.</p>
+      </figcaption>
+    </figure>
+
+    <div class="prose">
+      <p>
+        The Student-t likelihood has no closed-form solution, but it has a beautiful trick: it can be written as a
+        Gaussian whose variance is itself random, which turns the fit into <strong>Iteratively Reweighted Least
+        Squares</strong> — solve least squares, down-weight the bands that disagreed, repeat. Convergence takes about
+        ten iterations. These robust coefficients seed the main event.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <hr class="zrule">
+    <h2>Extreme Deconvolution, remodelled</h2>
+    <div class="prose">
+      <p>
+        <strong>Extreme Deconvolution (XD)</strong>, from Bovy et al. (2011), answers: given noisy measurements with
+        <em>known, per-object</em> noise, what underlying distribution — when convolved with that noise — best
+        reproduces what we see? It's an Expectation–Maximisation loop that alternately infers each galaxy's
+        de-noised position and updates the population parameters. Off the shelf, though, XD assumes a Gaussian
+        population with one fixed mean. Two renovations make it fit for cosmology:
+      </p>
+      <ul>
+        <li><strong>A mean that moves with redshift.</strong> The typical coefficient vector changes across cosmic
+          time — and not smoothly. So the mean becomes piecewise-linear, μ(z) = M₀ + M₁·z fitted independently in
+          seven redshift bins (with a separate covariance per bin), letting the model track genuine evolution
+          without forcing one global trend.</li>
+        <li><strong>A Student-t prior on the coefficients.</strong> Same lesson as Figure 6.1, now at the population
+          level: a Gaussian prior would quietly excommunicate entire sub-populations living in the tails. The
+          Student-t version down-weights outliers gracefully via a Mahalanobis-distance weight rather than
+          rejecting them.</li>
+      </ul>
+    </div>
+
+    <div class="flow reveal">
+      <div class="flow-head">
+        <span class="fig-tag">Workflow · modified XD</span>
+        <b>The population-inference loop</b>
+      </div>
+      <svg viewBox="0 0 980 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Extreme Deconvolution workflow flowchart">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#5A6C9C"/>
+          </marker>
+          <marker id="arrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#F3C879"/>
+          </marker>
+          <linearGradient id="specStroke" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#7DB4FF"/><stop offset=".4" stop-color="#8FE0C0"/>
+            <stop offset=".7" stop-color="#F3C879"/><stop offset="1" stop-color="#FF7A5C"/>
+          </linearGradient>
+        </defs>
+
+        <rect x="16" y="30" width="230" height="78" rx="10" class="fnode"/>
+        <text x="131" y="56" text-anchor="middle" class="ftext">Initialise</text>
+        <text x="131" y="74" text-anchor="middle" class="fsub">Student-t IRLS coefficients</text>
+        <text x="131" y="90" text-anchor="middle" class="fsub">per-bin regression → M₀, M₁, Σ</text>
+
+        <!-- EM loop box -->
+        <rect x="296" y="14" width="654" height="264" rx="14" fill="none" stroke="#2B3A63" stroke-dasharray="5 5"/>
+        <text x="316" y="40" class="flabel">EM LOOP — REPEAT UNTIL CONVERGED (~50 ITERATIONS)</text>
+
+        <rect x="326" y="58" width="270" height="74" rx="10" class="fnode"/>
+        <text x="461" y="82" text-anchor="middle" class="ftext">Reweight (Student-t)</text>
+        <text x="461" y="100" text-anchor="middle" class="fsub">wᵢ from Mahalanobis distance:</text>
+        <text x="461" y="116" text-anchor="middle" class="fsub">outliers → smaller prior pull</text>
+
+        <rect x="648" y="58" width="270" height="74" rx="10" class="fnode"/>
+        <text x="783" y="82" text-anchor="middle" class="ftext">E-step · per galaxy</text>
+        <text x="783" y="100" text-anchor="middle" class="fsub">blend data + prior → posterior</text>
+        <text x="783" y="116" text-anchor="middle" class="fsub">coefficients bᵢ, covariance Bᵢ</text>
+
+        <rect x="486" y="176" width="270" height="74" rx="10" class="fnode"/>
+        <text x="621" y="200" text-anchor="middle" class="ftext">M-step · per z-bin</text>
+        <text x="621" y="218" text-anchor="middle" class="fsub">weighted regression → M₀,ᵦ, M₁,ᵦ</text>
+        <text x="621" y="234" text-anchor="middle" class="fsub">update covariance Σᵦ</text>
+
+        <path d="M246,69 H318" class="farrow"/>
+        <path d="M596,95 H640" class="farrow"/>
+        <path d="M783,132 C783,166 740,180 700,190" class="farrow"/>
+        <path d="M486,213 C420,213 380,170 420,140" class="farrow farrow-hl" marker-end="url(#arrG)"/>
+        <text x="366" y="196" class="flabel">loop</text>
+
+        <rect x="16" y="322" width="452" height="74" rx="10" class="fnode fnode-hl"/>
+        <text x="242" y="348" text-anchor="middle" class="ftext">Per-galaxy outputs</text>
+        <text x="242" y="366" text-anchor="middle" class="fsub">de-noised coefficients + uncertainties</text>
+        <text x="242" y="382" text-anchor="middle" class="fsub">for all 419,654 galaxies</text>
+
+        <rect x="512" y="322" width="452" height="74" rx="10" class="fnode fnode-hl"/>
+        <text x="738" y="348" text-anchor="middle" class="ftext">Population outputs</text>
+        <text x="738" y="366" text-anchor="middle" class="fsub">μ(z) = M₀ + M₁z and Σ per bin →</text>
+        <text x="738" y="382" text-anchor="middle" class="fsub">sample synthetic galaxies at any z</text>
+
+        <path d="M560,250 C480,290 320,290 260,314" class="farrow"/>
+        <path d="M680,250 C720,286 730,290 738,314" class="farrow"/>
+      </svg>
+      <p class="flow-note">The E-step is a Bayesian tug-of-war for each galaxy: its own photometry pulls one way, the population prior pulls the other, and the Student-t weight decides how hard the prior is allowed to pull. Convergence: the relative change in population parameters falls six orders of magnitude in ~50 iterations.</p>
+    </div>
+
+    <figure class="fig reveal">
+      <div class="fig-img"><img src="img/fig6_2_convergence.png" alt="Convergence of the XD algorithm across iterations" loading="lazy"></div>
+      <figcaption>
+        <span class="fig-tag">Figure 6.2 · proof of stability</span>
+        <span class="fig-title">Fifty iterations from guess to convergence</span>
+        <p>The convergence metric — the relative change in the population parameters M₀ (blue) and M₁ (orange) between successive iterations — on a logarithmic axis. Both curves plunge steeply for the first ~10 iterations while the model makes its large corrections, then settle into a steady exponential descent, crossing the 10⁻⁶ stopping threshold at around iteration 50.</p>
+        <p><b>Why it matters:</b> EM algorithms are only guaranteed to climb the likelihood, not to converge quickly or to anywhere sensible; a modified EM with custom weights and a piecewise mean has no such textbook guarantees at all. A clean, monotone six-order-of-magnitude descent is the empirical certificate that the two structural modifications didn't destabilise the machinery — the fit lands, and lands firmly.</p>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <hr class="zrule">
+    <h2>Can the model reproduce the sky?</h2>
+    <div class="prose">
+      <p>
+        A generative model is graded on one thing: fold it back through the noise and compare to the data. The
+        report card comes in four figures, each slicing the residuals a different way.
+      </p>
+    </div>
+
+    <figure class="fig reveal">
+      <div class="fig-img"><img src="img/fig6_3_flux_residuals.png" alt="Normalised flux residual distributions per filter with Gaussian overlays" loading="lazy"></div>
+      <figcaption>
+        <span class="fig-tag">Figure 6.3 · the report card, per filter</span>
+        <span class="fig-title">Twenty filters, twenty residual distributions — and a diagnosis</span>
+        <p>For each of the 20 training filters, the distribution of normalised flux residuals (data − model)/σ across all galaxies. Two references overlaid: a unit Gaussian (green) — the perfect score, meaning the model errs only as much as the noise permits — and a Gaussian matched to each panel's actual width (red). Each panel's title reports its median and standard deviation.</p>
+        <p><b>How to read it:</b> shapes are reassuringly Gaussian everywhere — no lumps, no skew — meaning no hidden galaxy sub-population is being systematically betrayed. But the widths tell a stratified story: the high-signal HSC broadbands score σ ≈ 0.9–1.4 (nearly ideal), while the intermediate bands run σ ≈ 1.8–2.3 — the model misses by about twice the quoted error there. Medians mostly sit within ±1 of zero. <b>The diagnosis, argued in the thesis:</b> a three-way mix of (1) the loudest bands dominating the fit, (2) an 8-component basis that can't voice every spectral quirk the narrow bands can hear, and (3) residual calibration imperfections in the error floors. Each is an arrow pointing at future work rather than a flaw in the inference itself.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="fig reveal">
+      <div class="fig-img"><img src="img/fig6_4_resid_vs_z.png" alt="Flux residuals as a function of redshift for each filter" loading="lazy"></div>
+      <figcaption>
+        <span class="fig-tag">Figure 6.4 · residuals vs. cosmic time</span>
+        <span class="fig-title">No epoch is being failed</span>
+        <p>The median and 16–84th percentile band of the normalised residuals as a function of redshift, one panel per filter. The medians hug zero across the entire z ∈ [0, 8] range in every band; where excursions appear, they show no coherent trend with redshift.</p>
+        <p><b>Why this is the plot that matters for a <em>population</em> model:</b> the whole point of the piecewise-linear μ(z) was to let the model follow galaxy evolution. Had that machinery failed, this figure would show it instantly — residuals drifting up or down with z as the model lagged behind the evolving population. The flatness means the offsets seen in Figure 6.3 are global calibration-level effects, not a failure to track cosmic evolution. The redshift-dependent mean is doing its job.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="fig reveal">
+      <div class="fig-img"><img src="img/fig6_5_resid_vs_mag.png" alt="Flux residuals as a function of magnitude for each filter" loading="lazy"></div>
+      <figcaption>
+        <span class="fig-tag">Figure 6.5 · residuals vs. brightness</span>
+        <span class="fig-title">Bright galaxies: nailed. The faintest: slightly over-predicted.</span>
+        <p>The same residuals, now plotted against each filter's AB magnitude (larger magnitude = fainter). Across the bright and moderate range the median residual tracks zero tightly. At the faint end (m ≳ 27), several filters show a mild dip into negative residuals — the model predicting slightly more flux than is observed.</p>
+        <p><b>Interpretation:</b> at these magnitudes sources hover at the survey's detection limit, where noise, background subtraction, and selection effects all conspire; a small over-prediction there is expected and benign. The HSC broadbands, with their superior signal-to-noise, remain flat across their entire range. <b>Implication:</b> results drawn from this model are trustworthy for well-detected galaxies and should be handled with stated care within roughly a magnitude of the detection floor — exactly the regime future deeper surveys will rescue.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="fig reveal">
+      <div class="fig-img"><img src="img/fig6_6_mag_vs_mag.png" alt="Comparison of model-predicted and observed AB magnitude distributions per filter" loading="lazy"></div>
+      <figcaption>
+        <span class="fig-tag">Figure 6.6 · the generative test</span>
+        <span class="fig-title">Fabricated sky vs. real sky: nearly indistinguishable</span>
+        <p>For every filter, the distribution of observed AB magnitudes (red) overlaid with the distribution the model predicts (blue). Panel titles give each distribution's mean and standard deviation. Across all 20 filters the two histograms overlap almost completely — model means land within 0.3 magnitudes of the data, model widths within 0.2 magnitudes.</p>
+        <p><b>Why this is the headline result of the chapter:</b> this is the population model doing the job it was built for — acting as a generative engine. The per-object offsets of Figure 6.3, real as they are, are invisible at the population level (0.3 mag on axes spanning ~15 mag). <b>The implication:</b> the learned μ(z) and Σ(z) can be sampled to fabricate statistically realistic galaxy catalogues at any redshift — the ingredient survey planners need to rehearse Rubin-LSST and Euclid strategy years before first light, and the natural prior for the redshift inference of the next chapter.</p>
+      </figcaption>
+    </figure>
+
+    <div class="keyidea">
+      <span class="mono">Chapter in one line</span>
+      A noise-deconvolved, redshift-evolving, outlier-tolerant map of galaxy spectrum-space — accurate to 0.3 mag
+      at the population level, converged and stable, ready to be sampled.
+    </div>
+
+    <div class="pager">
+      <a href="vila.html">← Previous<b>VILA</b></a>
+      <a class="next" href="redshift.html">Next →<b>Redshift Inference</b></a>
+    </div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <div>
+      <b>Probabilistic Photometric Modelling of Galaxies</b><br>
+      Pranav R Iyengar · Imperial College London · 2026
+    </div>
+    
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>
